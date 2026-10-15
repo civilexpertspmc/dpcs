@@ -869,8 +869,8 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
       <div style="font-size:13px;font-weight:700;color:#061A59;letter-spacing:.4px">DPCS · Digital Project Control System</div>
       <h2 style="margin:6px 0 0;font-size:17px;color:#052585">Site Report sign-in</h2>
     </div>
-    <label class="f" for="lgMobile">Mobile number</label>
-    <input id="lgMobile" name="username" type="tel" inputmode="numeric" autocomplete="username" maxlength="14" placeholder="10-digit mobile" style="width:100%;min-height:46px;padding:10px 12px;border:1px solid #DCE3EC;border-radius:10px;font-size:16px;margin-bottom:12px">
+    <label class="f" for="lgMobile">Mobile number or email</label>
+    <input id="lgMobile" name="username" type="text" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="username" maxlength="80" placeholder="Mobile or email" style="width:100%;min-height:46px;padding:10px 12px;border:1px solid #DCE3EC;border-radius:10px;font-size:16px;margin-bottom:12px">
     <label class="f" for="lgPin">PIN</label>
     <input id="lgPin" name="password" type="password" inputmode="numeric" autocomplete="current-password" maxlength="8" placeholder="4–6 digit PIN" style="width:100%;min-height:46px;padding:10px 12px;border:1px solid #DCE3EC;border-radius:10px;font-size:16px">
     <button class="btn pri" type="submit" id="lgBtn" style="width:100%;margin-top:16px;min-height:48px">Sign in</button>
@@ -882,7 +882,7 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
 <script>
 (function(){
   const scrim=document.getElementById('loginScrim'), f=document.getElementById('loginForm'), msg=document.getElementById('lgMsg');
-  const ERR={BAD_LOGIN:'Mobile number or PIN is wrong.',BLOCKED:'Your access is blocked. Contact the project manager.',
+  const ERR={BAD_LOGIN:'Mobile/email or PIN is wrong.',BLOCKED:'Your access is blocked. Contact the project manager.',
     LOCKED:'Too many wrong tries. Try again after 15 minutes.',OFFLINE:'No internet. Connect and try again.',NOT_CONNECTED:'App is not connected to the server.'};
   window.showLogin=function(note){ msg.textContent=note||''; msg.style.color='#5B6B7C'; scrim.style.display='flex'; };
   function userChip(){
@@ -895,8 +895,9 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
   }
   f.onsubmit=async e=>{
     e.preventDefault();
-    const m=document.getElementById('lgMobile').value.replace(/\D/g,''), p=document.getElementById('lgPin').value.trim();
-    if(m.length<10 || !/^\d{4,8}$/.test(p)){ msg.textContent='Enter your 10-digit mobile number and PIN.'; msg.style.color='#B7443E'; return; }
+    const raw=document.getElementById('lgMobile').value.trim(), p=document.getElementById('lgPin').value.trim();
+    const m= raw.includes('@') ? raw.toLowerCase() : raw.replace(/\D/g,'');
+    if((raw.includes('@') ? !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m) : m.length<10) || !/^\d{4,8}$/.test(p)){ msg.textContent='Enter your mobile number or email, and your PIN.'; msg.style.color='#B7443E'; return; }
     const btn=document.getElementById('lgBtn'); btn.disabled=true; msg.textContent='Signing in…'; msg.style.color='#5B6B7C';
     const j=await callApi({action:'login',mobile:m,pin:p}); btn.disabled=false;
     if(j && j.ok){
@@ -919,6 +920,8 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
       <div class="grid">
         <div><label class="f">Name</label><input type="text" id="tmName" placeholder="Full name"></div>
         <div><label class="f">Mobile number</label><input type="text" id="tmMobile" inputmode="numeric" maxlength="14" placeholder="10-digit mobile"></div>
+        <div class="full"><label class="f">Email</label><input type="text" id="tmEmail" inputmode="email" autocapitalize="off" spellcheck="false" maxlength="80" placeholder="name@example.com"></div>
+        <div class="full note" style="margin-top:-4px">Mobile or email is enough — they sign in with either one.</div>
         <div class="full"><label class="f">Role</label><select id="tmRole"></select></div>
       </div>
       <button class="btn pri" type="button" id="tmAdd" style="width:100%;margin-top:12px;min-height:46px">Add &amp; create PIN</button>
@@ -944,14 +947,18 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
       row.insertBefore(t,document.getElementById('btnUser')||null); t.onclick=openTeam; }
   };
   function fillRoles(sel,val){ sel.innerHTML=roles.map(r=>`<option${r===val?' selected':''}>${esc(r)}</option>`).join(''); }
-  function showPin(name,mobile,pin,isNew){
-    const msg=`Civil Experts DPCS – Site Report\nHello ${name}, your sign-in for the daily site report:\nApp: ${APP_LINK}\nMobile: ${mobile}\nPIN: ${pin}\nPlease keep your PIN private.`;
+  function showPin(name,mobile,pin,isNew,email){
+    const sid=mobile||email;
+    const msg=`Civil Experts DPCS – Site Report\nHello ${name}, your sign-in for the daily site report:\nApp: ${APP_LINK}\nSign in with: ${sid}\nPIN: ${pin}\nPlease keep your PIN private.`;
     res.innerHTML=`<div class="card" style="border:2px solid #FECA08"><h2>${isNew?'Member added':'PIN reset'}</h2>
-      <p style="margin:0 0 6px">${esc(name)} · ${esc(mobile)}</p>
+      <p style="margin:0 0 6px">${esc(name)} · ${esc(sid)}</p>
       <div style="font-size:28px;font-weight:800;letter-spacing:6px;color:#052585;margin:6px 0">${esc(pin)}</div>
       <p class="note" style="margin:0 0 10px">Shown only now. Share it privately with this person.</p>
-      <a class="btn pri" style="display:block;text-align:center;text-decoration:none;min-height:44px;line-height:44px;padding:0" target="_blank" rel="noopener"
-         href="https://wa.me/91${encodeURIComponent(mobile)}?text=${encodeURIComponent(msg)}">Send on WhatsApp</a></div>`;
+      ${mobile?`<a class="btn pri" style="display:block;text-align:center;text-decoration:none;min-height:44px;line-height:44px;padding:0;margin-bottom:8px" target="_blank" rel="noopener"
+         href="https://wa.me/91${encodeURIComponent(mobile)}?text=${encodeURIComponent(msg)}">Send on WhatsApp</a>`:''}
+      ${email?`<a class="btn${mobile?'':' pri'}" style="display:block;text-align:center;text-decoration:none;min-height:44px;line-height:44px;padding:0" target="_blank" rel="noopener"
+         href="mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent('Your DPCS Site Report sign-in')}&body=${encodeURIComponent(msg)}">Send by email</a>`:''}
+      ${!mobile&&!email?'':''}</div>`;
     res.scrollIntoView({behavior:'smooth'});
   }
   async function load(){
@@ -969,26 +976,26 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
     list.innerHTML = j.users.length ? j.users.map(u=>`
       <div style="border-top:1px solid #DCE3EC;padding:10px 0">
         <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
-          <div><b>${esc(u.name)}</b>${badge(u.role)}${u.mobile===me?' <span class="note">(you)</span>':''}<br><span class="note">${esc(u.mobile)} · ${esc(u.role)}</span><br>
+          <div><b>${esc(u.name)}</b>${badge(u.role)}${u.self?' <span class="note">(you)</span>':''}<br><span class="note">${esc([u.mobile,u.email].filter(Boolean).join(' · '))} · ${esc(u.role)}</span><br>
             <span style="font-size:11px;font-weight:700;color:${u.active?'#2E7D4F':'#B7443E'}">${u.active?'ACTIVE':'BLOCKED'}</span>
             <span class="note" style="font-size:11px"> · ${u.pin_pending?'PIN not used yet':(u.last_login?'last sign-in '+esc(u.last_login):'never signed in')}</span></div>
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-          ${u.editable?`<select data-role="${esc(u.mobile)}" style="flex:1;min-width:140px;min-height:38px;padding:4px 10px;font-size:14px">${roles.map(r=>`<option${r===u.role?' selected':''}>${esc(r)}</option>`).join('')}</select>`:(u.can_reset?'':'<span class="note" style="font-size:12px">Managed by Civil Experts</span>')}
-          ${u.can_reset?`<button class="btn" type="button" data-reset="${esc(u.mobile)}" style="flex:none;min-height:38px;padding:4px 12px;font-size:13px">${u.self?'Reset my PIN':'Reset PIN'}</button>`:''}
-          ${!u.editable?'':`<button class="btn" type="button" data-toggle="${esc(u.mobile)}" style="flex:none;min-height:38px;padding:4px 12px;font-size:13px;color:${u.active?'#B7443E':'#2E7D4F'}">${u.active?'Block':'Unblock'}</button>`}
+          ${u.editable?`<select data-role="${esc(u.id)}" style="flex:1;min-width:140px;min-height:38px;padding:4px 10px;font-size:14px">${roles.map(r=>`<option${r===u.role?' selected':''}>${esc(r)}</option>`).join('')}</select>`:(u.can_reset?'':'<span class="note" style="font-size:12px">Managed by Civil Experts</span>')}
+          ${u.can_reset?`<button class="btn" type="button" data-reset="${esc(u.id)}" style="flex:none;min-height:38px;padding:4px 12px;font-size:13px">${u.self?'Reset my PIN':'Reset PIN'}</button>`:''}
+          ${!u.editable?'':`<button class="btn" type="button" data-toggle="${esc(u.id)}" style="flex:none;min-height:38px;padding:4px 12px;font-size:13px;color:${u.active?'#B7443E':'#2E7D4F'}">${u.active?'Block':'Unblock'}</button>`}
         </div></div>`).join('') : '<p class="note">No members yet.</p>';
-    const byM=m=>j.users.find(u=>u.mobile===m);
+    const byM=m=>j.users.find(u=>u.id===m); const base=u=>({action:'admin_save',id:u.id,mobile:u.mobile,email:u.email,name:u.name});
     list.querySelectorAll('[data-reset]').forEach(b=>b.onclick=async()=>{ const u=byM(b.dataset.reset);
       if(!confirm('Reset PIN for '+u.name+'? Their old PIN will stop working.')) return;
-      const r=await call({action:'admin_save',mobile:u.mobile,name:u.name,role:u.role,active:u.active,reset_pin:true});
-      if(r.ok){ showPin(u.name,u.mobile,r.pin,false); load(); } else toast(r.error); });
+      const r=await call(Object.assign(base(u),{role:u.role,active:u.active,reset_pin:true}));
+      if(r.ok){ showPin(u.name,u.mobile,r.pin,false,u.email); load(); } else toast(r.error); });
     list.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=async()=>{ const u=byM(b.dataset.toggle);
       if(u.active && !confirm('Block '+u.name+'? They will not be able to submit reports.')) return;
-      const r=await call({action:'admin_save',mobile:u.mobile,name:u.name,role:u.role,active:!u.active});
+      const r=await call(Object.assign(base(u),{role:u.role,active:!u.active}));
       if(r.ok){ toast(u.name+(u.active?' blocked':' unblocked')); load(); } else toast(r.error); });
     list.querySelectorAll('[data-role]').forEach(sel=>sel.onchange=async()=>{ const u=byM(sel.dataset.role);
-      const r=await call({action:'admin_save',mobile:u.mobile,name:u.name,role:sel.value,active:u.active});
+      const r=await call(Object.assign(base(u),{role:sel.value,active:u.active}));
       if(r.ok){ toast('Role updated'); load(); } else { toast(r.error); load(); } });
   }
   function openTeam(){ scrim.style.display='block'; res.innerHTML=''; load(); }
@@ -996,12 +1003,14 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
   document.getElementById('tmRefresh').onclick=load;
   document.getElementById('tmAdd').onclick=async()=>{
     const name=document.getElementById('tmName').value.trim(), mobile=document.getElementById('tmMobile').value.replace(/\D/g,'').slice(-10), role=document.getElementById('tmRole').value;
-    if(!name||mobile.length!==10){ toast('Enter name and 10-digit mobile'); return; }
+    const email=document.getElementById('tmEmail').value.trim().toLowerCase();
+    if(!name){ toast('Enter the name'); return; }
+    if(mobile.length!==10 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ toast('Enter a 10-digit mobile or a valid email'); return; }
     const btn=document.getElementById('tmAdd'); btn.disabled=true;
-    const r=await call({action:'admin_save',name,mobile,role,active:true}); btn.disabled=false;
+    const r=await call({action:'admin_save',name,mobile:mobile.length===10?mobile:'',email,role,active:true}); btn.disabled=false;
     if(!r.ok){ toast(r.error); return; }
-    document.getElementById('tmName').value=''; document.getElementById('tmMobile').value='';
-    if(r.pin) showPin(name,mobile,r.pin,r.created); else toast('Member updated');
+    document.getElementById('tmName').value=''; document.getElementById('tmMobile').value=''; document.getElementById('tmEmail').value='';
+    if(r.pin) showPin(name,mobile.length===10?mobile:'',r.pin,r.created,email); else toast('Member updated');
     load();
   };
   // refresh role/admin flag for sessions started before this update
