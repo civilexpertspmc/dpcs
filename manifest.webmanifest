@@ -1,16 +1,29 @@
 {
-  "name": "DPCS Site Report – Subhadra Towers",
+  "name": "DPCS Site Report – Civil Experts",
   "short_name": "DPCS Report",
-  "description": "Daily site engineering field report – DPCS by Civil Experts PMC",
+  "description": "Civil Experts DPCS – Digital Project Control System. Clear Project Control. Better Construction Decisions.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#F6F8FB",
-  "theme_color": "#122840",
+  "background_color": "#FFFFFF",
+  "theme_color": "#052585",
   "icons": [
-    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
-    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
-    {"src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
