@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#122840">
+<title>DPCS Site Report – Subhadra Towers</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="DPCS Report">
+<meta name="description" content="DPCS – Digital Project Control System by Civil Experts PMC. Daily site engineering field report.">
+<style>
+:root{
+  --navy:#122840;--azure:#2763A5;--aqua:#117F87;--bg:#F6F8FB;--card:#FFFFFF;
+  --text:#182634;--muted:#5B6B7C;--line:#DCE3EC;--amber:#B87920;--red:#B7443E;--ok:#2E7D4F;
+  --r:12px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:15px/1.45 Inter,"Segoe UI",Roboto,Arial,sans-serif;-webkit-text-size-adjust:100%;padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+button,input,select,textarea{font:inherit;color:inherit}
+.top{background:var(--navy);color:#fff;padding:14px 16px 12px;position:sticky;top:0;z-index:30;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.top .row{display:flex;align-items:center;gap:10px;max-width:760px;margin:0 auto}
+.top h1{font-size:16px;margin:0;letter-spacing:.2px;flex:1;line-height:1.25}
+.top h1 small{display:block;font-weight:400;opacity:.75;font-size:12px}
+.top .hbtn{background:rgba(255,255,255,.12);border:0;color:#fff;border-radius:8px;padding:8px 10px;font-size:13px}
+.saved{font-size:11px;opacity:.75;white-space:nowrap}
+main{max-width:760px;margin:0 auto;padding:12px 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:12px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--azure);margin:0 0 10px}
+.proj-meta{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.proj-meta dt{color:var(--muted)}.proj-meta dd{margin:0;font-weight:500}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.full{grid-column:1/-1}
+@media (max-width:420px){.grid{grid-template-columns:1fr}}
+label.f{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px}
+label.f .req{color:var(--red)}
+select,input[type=text],input[type=number],input[type=date],textarea{
+  width:100%;min-height:46px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:16px;appearance:none;-webkit-appearance:none}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 50%,calc(100% - 13px) 50%;background-size:5px 5px;background-repeat:no-repeat;padding-right:32px}
+textarea{min-height:64px;resize:vertical}
+select:focus,input:focus,textarea:focus{outline:2px solid var(--azure);outline-offset:0;border-color:var(--azure)}
+.err{border-color:var(--red)!important;background:#FDF3F2!important}
+.date-dd{font-size:12px;color:var(--muted);margin-top:4px}
+.act{padding:0;overflow:hidden}
+.act-head{display:flex;align-items:center;gap:10px;padding:12px 12px 12px 14px;cursor:pointer;background:#FBFCFE;border-bottom:1px solid var(--line)}
+.act.collapsed .act-head{border-bottom:0}
+.num{flex:none;width:28px;height:28px;border-radius:50%;background:var(--aqua);color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
+.ah-txt{flex:1;min-width:0}
+.ah-txt b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ah-txt small{display:block;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icon{flex:none;width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:#fff;font-size:15px;color:var(--muted)}
+.icon.del{color:var(--red)}
+.act-body{padding:14px}
+.sub{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
+.sub-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.sub-h b{font-size:13px}
+.pill{font-size:12px;background:#EAF1F9;color:var(--azure);border-radius:20px;padding:3px 10px;font-weight:600}
+.rowline{display:grid;grid-template-columns:1fr 92px 40px;gap:8px;margin-bottom:8px;align-items:end}
+.rowline.m{grid-template-columns:1fr 1fr 84px 40px}
+@media (max-width:420px){.rowline.m{grid-template-columns:1fr 1fr}.rowline.m .hrs{grid-column:1}.rowline.m .x{grid-column:2;justify-self:end}}
+.mpbox{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;background:#FBFCFE}
+.mpbox-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:12px;font-weight:700;color:var(--aqua);text-transform:uppercase;letter-spacing:.4px}
+.mpbox-h .x{height:34px;width:34px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--red)}
+.mpbox .grid{grid-template-columns:1fr 1fr}
+.sync{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;margin-left:6px}
+.sync.ok{background:#E8F5EE;color:var(--ok);border:1px solid #BFE0CC}
+.sync.wait{background:#FFF5E6;color:var(--amber);border:1px solid #F0D9B5}
+.sync.err{background:#FDF3F2;color:var(--red);border:1px solid #EBC4C1}
+.rowline .x{height:46px;width:40px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--red);font-size:16px}
+.add-row{width:100%;min-height:42px;border:1px dashed var(--azure);border-radius:10px;background:#F4F8FD;color:var(--azure);font-weight:600}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;user-select:none}
+.switch input{position:absolute;opacity:0;pointer-events:none}
+.track{width:46px;height:26px;border-radius:13px;background:#C9D3DE;position:relative;flex:none;transition:.2s}
+.track::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.switch input:checked+.track{background:var(--aqua)}
+.switch input:checked+.track::after{left:23px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom));z-index:30;box-shadow:0 -2px 10px rgba(18,40,64,.08)}
+.bar .row{display:flex;gap:8px;max-width:760px;margin:0 auto}
+.btn{flex:1;min-height:48px;border-radius:10px;border:1px solid var(--line);background:#fff;font-weight:600;font-size:15px;padding:0 10px}
+.btn.pri{background:var(--azure);border-color:var(--azure);color:#fff}
+.btn.aqua{background:var(--aqua);border-color:var(--aqua);color:#fff}
+.btn.ghost{color:var(--azure)}
+.note{font-size:12px;color:var(--muted);margin:4px 0 0}
+.tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.4px;padding:3px 8px;border-radius:6px;background:#FFF5E6;color:var(--amber);border:1px solid #F0D9B5}
+/* modal */
+.scrim{position:fixed;inset:0;background:rgba(18,40,64,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.scrim[hidden]{display:none}
+.sheet{background:#fff;width:100%;max-width:520px;border-radius:16px 16px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:85vh;overflow:auto}
+@media (min-width:600px){.scrim{align-items:center}.sheet{border-radius:16px}}
+.sheet h3{margin:0 0 4px;font-size:17px}
+.sheet .row{display:flex;gap:8px;margin-top:14px}
+.warn{color:var(--red);font-size:13px;margin-top:6px;min-height:18px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));background:var(--navy);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:60;opacity:0;transition:.25s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.show{opacity:1}
+/* report view */
+.rep h2{color:var(--navy)}
+.rep-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start}
+.rep-head .t{font-size:18px;font-weight:700;color:var(--navy)}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}
+@media (max-width:480px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:#F4F8FD;border-radius:10px;padding:10px}
+.kpi b{display:block;font-size:20px;color:var(--navy)}
+.kpi span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.ritem{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px}
+.ritem .h{display:flex;gap:10px;align-items:baseline;justify-content:space-between}
+.ritem .h b{font-size:15px}
+.ritem .q{font-weight:700;color:var(--aqua);white-space:nowrap}
+.ritem .q.nr{color:var(--amber);font-weight:600;font-size:13px}
+.ritem dl{display:grid;grid-template-columns:110px 1fr;gap:3px 10px;font-size:13px;margin:8px 0 0}
+.ritem dt{color:var(--muted)}.ritem dd{margin:0}
+.hist{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-top:8px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.hist button{flex:none}
+.empty{color:var(--muted);font-size:14px;padding:8px 0}
+.foot{font-size:11px;color:var(--muted);text-align:center;margin:18px 0 6px}
+@media print{
+  body{background:#fff;padding:0}
+  .top,.bar,.noprint,#formView{display:none!important}
+  main{max-width:none;padding:0}
+  .card{border:0;padding:0}
+  .ritem{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="row">
+    <h1><span style="display:inline-block;background:#117F87;border-radius:5px;padding:1px 6px;font-size:11px;letter-spacing:.8px;margin-right:6px;vertical-align:2px">DPCS</span>Site Engineering Field Report Card<small id="topSub">Civil Experts PMC · DPCS</small></h1>
+    <span class="saved" id="savedState"></span>
+    <button class="hbtn" id="btnHistory" type="button">Reports</button>
+  </div>
+</header>
+
+<main>
+  <!-- ============ FORM VIEW ============ -->
+  <div id="formView">
+    <section class="card">
+      <h2>Project</h2>
+      <div class="grid">
+        <div class="full">
+          <label class="f">Project <span class="req">*</span></label>
+          <div id="projSel"></div>
+        </div>
+        <div>
+          <label class="f" for="hDate">Report date <span class="req">*</span></label>
+          <input type="date" id="hDate" data-path="h.date">
+          <div class="date-dd" id="dateDD"></div>
+        </div>
+        <div>
+          <label class="f">Site engineer <span class="req">*</span></label>
+          <div id="engSel"></div>
+        </div>
+      </div>
+      <dl class="proj-meta" id="projMeta"></dl>
+    </section>
+
+    <div id="entries"></div>
+
+    <button class="add-row noprint" id="btnAddAct2" type="button" style="min-height:52px;margin-bottom:12px">＋ Add another activity</button>
+    <div id="extras"></div>
+    <p class="note" style="text-align:center;margin-top:10px">Drafts save on this phone automatically. Nothing is counted as approved until a PM verifies it.</p>
+  </div>
+
+  <!-- ============ REPORT VIEW ============ -->
+  <div id="reportView" hidden></div>
+
+  <p class="foot">Data basis: SITE REPORTED – NOT VERIFIED · Dates DD-MM-YYYY · Asia/Kolkata</p>
+</main>
+
+<nav class="bar" id="barForm">
+  <div class="row">
+    <button class="btn ghost" id="btnAddAct" type="button">＋ Activity</button>
+    <button class="btn" id="btnSave" type="button">Save draft</button>
+    <button class="btn pri" id="btnSubmit" type="button">Submit</button>
+  </div>
+</nav>
+<nav class="bar" id="barReport" hidden>
+  <div class="row">
+    <button class="btn" id="btnPrint" type="button">Print / PDF</button>
+    <button class="btn" id="btnCSV" type="button">CSV</button>
+    <button class="btn aqua" id="btnNew" type="button">New report</button>
+  </div>
+</nav>
+
+<!-- Add-new modal -->
+<div class="scrim" id="addScrim" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+    <h3 id="addTitle">Add new</h3>
+    <p class="note" id="addHint">New entries are saved on this phone and marked <b>pending approval</b> until added to the master list.</p>
+    <div style="margin-top:12px">
+      <input type="text" id="addInput" autocomplete="off" placeholder="Type name">
+      <div class="warn" id="addWarn"></div>
+    </div>
+    <div class="row">
+      <button class="btn" type="button" id="addCancel">Cancel</button>
+      <button class="btn pri" type="button" id="addOk">Add &amp; select</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm / generic modal -->
+<div class="scrim" id="cfmScrim" hidden>
+  <div class="sheet" role="dialog" aria-modal="true">
+    <h3 id="cfmTitle"></h3>
+    <div id="cfmBody" style="font-size:14px;margin-top:8px"></div>
+    <div class="row" id="cfmBtns"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================================
+   SITE ENGINEERING FIELD REPORT CARD — staging build
+   Reference project data: owner-confirmed facts (project_context/CONFIRMED_FACTS.md)
+   Backend hook: set SUBMIT_ENDPOINT to the approved n8n / Apps Script URL ONLY
+   after owner authorization (CLAUDE.md rule 10). Empty = local save + export.
+   ========================================================================= */
+const SUBMIT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwy9GTRyuK79gjXd7nqJLxrWmA6OooMbnNnm8_aM8Ir_fVXsfQsWNNyHpxbZXJB0eo/exec';   // paste the Apps Script Web App URL (…/exec) here, or set it once under Reports > Connection
+const K_AUTH = 'dpcs.auth.v1';   // signed-in staff session (no secret key in this app)
+const TZ = 'Asia/Kolkata';
+const K_DRAFT = 'sefrc.draft.v1', K_MASTERS = 'sefrc.masters.v1', K_DONE = 'sefrc.submitted.v1', K_URL = 'sefrc.endpoint.v1';
+
+/* ---------- Master data (backend-managed in production) ---------- */
+const PROJECTS = [{
+  id:'ST-SANDBOX', name:'Motwani Lordsway — Subhadra Towers',
+  meta:[
+    ['Site','Subhadra Towers'],
+    ['Client','Motwani Construction Pvt. Ltd.'],
+    ['Contractor','Buildwell Construction Company'],
+    ['Consultant','Saanvika Constructionize'],
+    ['Scope','6 towers (A1–A6) · 2 stilt + 11 residential floors'],
+    ['Foundation','Pile + raft · 5 rafts (Raft-3 = A3+A4 combined)'],
+    ['Concrete','M40 columns / shear & core walls · M30 raft, slabs, beams']
+  ]
+}];
+
+const LOCATIONS = [
+  'Tower A1','Tower A2','Tower A3','Tower A4','Tower A5','Tower A6',
+  'Raft-1 (A1)','Raft-2 (A2)','Raft-3 (A3+A4)','Raft-4 (A6)','Raft-5 (A5)',
+  'Site / Common area','Store yard','Batching / Stacking yard'
+];
+const FLOORS = [
+  'Foundation / Pile','Raft','Lift pit','Stilt-1','Stilt-2',
+  '1st Floor','2nd Floor','3rd Floor','4th Floor','5th Floor','6th Floor',
+  '7th Floor','8th Floor','9th Floor','10th Floor','11th Floor','Terrace / Roof','Not applicable'
+];
+const UNITS = ['m³','m²','RMT','MT','kg','Nos','Point','LS'];
+const TRADES = ['Mason','Helper / Mazdoor','Bar Bender','Carpenter (Shuttering)','Welder','Machine Operator','Fitter','Electrician','Plumber','Supervisor'];
+const MACHINES = ['Excavator (Poclain)','Backhoe Loader (JCB)','Hydra Crane','Tower Crane','Transit Mixer','Concrete Pump','Boom Placer','Needle Vibrator','Plate Compactor','Roller','Tipper / Dumper','Bar Bending Machine','Bar Cutting Machine','Welding Machine','DG Set','Dewatering Pump'];
+const ENGINEERS = [];
+const ATT_CATS = ['Material shortage','Manpower shortage','Machinery breakdown','Drawing / design pending','Inspection / approval pending','Weather','Safety','Payment / commercial','Other'];
+const SEVERITY = ['Low','Medium','High','Critical'];
+const CONTRACTORS = ['In-house team','Buildwell Construction Company'];
+const BASIS = ['Daily basis (Hajiri)','Contract (Piece rate)'];
+
+/* Activity list follows the owner-approved sequence:
+   excavation → PCC → pile breaking → surface prep → PIT → pile build-up → pile steel welding
+   → raft binding → shuttering → final check → raft casting; then floor cycle. */
+const ACTIVITIES = [
+  {n:'Excavation',u:'m³',d:['Bulk excavation','Trimming & dressing','Lift pit excavation','Disposal of excavated earth']},
+  {n:'Sand Filling & Compaction',u:'m³',d:['150 mm sand filling & compaction','Dressing & levelling']},
+  {n:'PCC',u:'m³',d:['PCC below raft','PCC for lift pit','PCC levelling course']},
+  {n:'Pile Breaking',u:'Nos',d:['Pile head chipping to cut-off level']},
+  {n:'Surface Preparation',u:'m²',d:['Cleaning & surface preparation']},
+  {n:'Pile Integrity Test (PIT)',u:'Nos',d:['PIT carried out on piles']},
+  {n:'Pile Build-up',u:'Nos',d:['Pile build-up to cut-off level']},
+  {n:'Pile Steel Straightening / Welding',u:'Nos',d:['Pile steel straightening','Pile steel welding / lapping']},
+  {n:'Lift Pit Brick Work',u:'m³',d:['Lift pit brick wall']},
+  {n:'Raft Steel Binding',u:'MT',d:['Bottom mesh','Top mesh','Chairs / spacers','Lift pit steel']},
+  {n:'Pedestal Steel Binding',u:'MT',d:['Pedestal steel fixing']},
+  {n:'Raft Shuttering',u:'m²',d:['Raft side shuttering','Lift pit shuttering']},
+  {n:'Raft Casting',u:'m³',d:['Raft concreting (M30)']},
+  {n:'Starter Casting',u:'Nos',d:['Column starters','Shear wall starters']},
+  {n:'Column / Shear Wall Steel',u:'MT',d:['Vertical steel fixing','Stirrups / links']},
+  {n:'Column / Shear Wall Shuttering',u:'m²',d:['Column shuttering','Shear / core wall shuttering']},
+  {n:'Column / Shear Wall Casting',u:'m³',d:['Column concreting (M40)','Shear / core wall concreting (M40)']},
+  {n:'Beam & Slab Shuttering',u:'m²',d:['Staging & props','Beam bottom & sides','Slab deck']},
+  {n:'Beam & Slab Steel',u:'MT',d:['Beam reinforcement','Slab bottom steel','Slab top steel']},
+  {n:'Beam & Slab Casting',u:'m³',d:['Beam & slab concreting (M30)']},
+  {n:'Lift / Core Wall Work',u:'m³',d:['Lift wall steel','Lift wall shuttering','Lift wall casting']},
+  {n:'De-shuttering',u:'m²',d:['Column de-shuttering','Slab de-shuttering']},
+  {n:'Curing',u:'m²',d:['Curing of cast elements']},
+  {n:'Backfilling',u:'m³',d:['Backfilling & compaction']},
+  {n:'Brickwork',u:'m³',d:['External wall','Internal partition']},
+  {n:'Plastering',u:'m²',d:['Internal plaster','External plaster']}
+];
+const GENERIC_DESC = ['General work','Rework / rectification'];
+
+/* ---------- utilities ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s||'').trim().replace(/\s+/g,' ').toLowerCase();
+const uid = p => (p||'') + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2,6).toUpperCase();
+const todayISO = () => new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+const ddmmyyyy = iso => iso ? iso.split('-').reverse().join('-') : '';
+const nowISO = () => new Date().toISOString();
+const num = v => (v===''||v==null||isNaN(+v)) ? null : +v;
+const store = {
+  get(k,d){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } },
+  set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+let toastT;
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600); }
+
+/* ---------- masters (base + added-on-device) ---------- */
+let added = store.get(K_MASTERS,{}); // {cat:[...], descriptions:{activity:[...]}}
+const BASE = {
+  projects: PROJECTS.map(p=>p.name), locations:LOCATIONS, floors:FLOORS, units:UNITS,
+  trades:TRADES, machines:MACHINES, engineers:ENGINEERS, activities:ACTIVITIES.map(a=>a.n),
+  contractors:CONTRACTORS, basis:BASIS, attcats:ATT_CATS, severity:SEVERITY
+};
+const NO_ADD = ['basis','severity'];
+const CAT_LABEL = {attcats:'category',severity:'severity',contractors:'contractor / team',basis:'basis',projects:'project',locations:'location',floors:'floor / level',units:'unit',trades:'trade',machines:'machine type',engineers:'site engineer',activities:'activity',descriptions:'work description'};
+function lists(cat,ctx){
+  if(cat==='descriptions'){
+    const a = ACTIVITIES.find(x=>x.n===ctx);
+    return { base:(a?a.d:[]).concat(GENERIC_DESC), add:((added.descriptions||{})[ctx]||[]) };
+  }
+  return { base:BASE[cat]||[], add:added[cat]||[] };
+}
+function addMaster(cat,ctx,val){
+  if(cat==='descriptions'){ added.descriptions=added.descriptions||{}; (added.descriptions[ctx]=added.descriptions[ctx]||[]).push(val); }
+  else (added[cat]=added[cat]||[]).push(val);
+  store.set(K_MASTERS,added);
+}
+function isAdded(cat,ctx,val){ return lists(cat,ctx).add.includes(val); }
+
+/* ---------- state ---------- */
+const blankMp = prev => ({agency:prev?prev.agency:'',basis:prev?prev.basis:'',trade:'',count:''});
+function blankEntry(){ return {id:uid('E-'),activity:'',location:'',floor:'',desc:'',qty:'',unit:'',manpower:[blankMp()],machOn:false,machinery:[],remarks:'',_c:false}; }
+const blankPlan = () => ({location:'',activity:'',qty:'',unit:''});
+const blankAtt = () => ({category:'',severity:'',location:'',text:''});
+function blankReport(){ return {draftId:uid('D-'),project:PROJECTS[0].name,date:todayISO(),engineer:'',entries:[blankEntry()],tomorrow:[blankPlan()],attention:[blankAtt()]}; }
+let S = store.get(K_DRAFT,null) || blankReport();
+
+/* ---------- rendering ---------- */
+function selectHTML(cat,val,path,ctx,ph){
+  const {base,add}=lists(cat,ctx);
+  let h=`<select data-path="${path}" data-cat="${cat}"${ctx!=null?` data-ctx="${esc(ctx)}"`:''}>`;
+  h+=`<option value="">${esc(ph||'Select…')}</option>`;
+  base.forEach(o=>h+=`<option value="${esc(o)}"${o===val?' selected':''}>${esc(o)}</option>`);
+  if(add.length){ h+=`<optgroup label="Added on this phone · pending approval">`; add.forEach(o=>h+=`<option value="${esc(o)}"${o===val?' selected':''}>${esc(o)}</option>`); h+='</optgroup>'; }
+  if(val && !base.includes(val) && !add.includes(val)) h+=`<option value="${esc(val)}" selected>${esc(val)}</option>`;
+  if(!NO_ADD.includes(cat)) h+=`<option value="__add__">＋ Add new ${esc(CAT_LABEL[cat]||'')}…</option>`;
+  h+='</select>';
+  return h;
+}
+function subline(e){
+  const p=[e.location,e.floor].filter(Boolean).join(' · ');
+  const mp=e.manpower.reduce((s,m)=>s+(num(m.count)||0),0);
+  const q = num(e.qty)!=null ? `${e.qty} ${e.unit||''}` : '';
+  return [p,q,mp?mp+' manpower':''].filter(Boolean).join(' · ') || 'Tap to fill';
+}
+function entryHTML(e,i){
+  const P=`e.${i}`;
+  let mp = e.manpower.map((m,j)=>`
+    <div class="mpbox">
+      <div class="mpbox-h"><span>Gang ${j+1}${m.agency?' · '+esc(m.agency==='In-house team'?'In-house':'Contractor'):''}</span>
+        <button class="x" type="button" data-act="delMp" data-i="${i}" data-j="${j}" aria-label="Remove manpower line">✕</button></div>
+      <div class="grid">
+        <div class="full"><label class="f">Contractor / team</label>${selectHTML('contractors',m.agency,`${P}.manpower.${j}.agency`,null,'In-house or contractor…')}</div>
+        <div class="full"><label class="f">Engagement basis</label>${selectHTML('basis',m.basis,`${P}.manpower.${j}.basis`,null,'Daily or contract…')}</div>
+        <div><label class="f">Trade</label>${selectHTML('trades',m.trade,`${P}.manpower.${j}.trade`,null,'Trade…')}</div>
+        <div><label class="f">Nos</label><input type="number" inputmode="numeric" min="0" step="1" placeholder="0" value="${esc(m.count)}" data-path="${P}.manpower.${j}.count"></div>
+      </div>
+    </div>`).join('');
+  const mpTotal=e.manpower.reduce((s,m)=>s+(num(m.count)||0),0);
+  let mc='';
+  if(e.machOn){
+    mc = e.machinery.map((m,j)=>`
+      <div class="rowline m">
+        <div>${j===0?'<label class="f">Machine type</label>':''}${selectHTML('machines',m.type,`${P}.machinery.${j}.type`,null,'Machine…')}</div>
+        <div>${j===0?'<label class="f">Working location</label>':''}${selectHTML('locations',m.location,`${P}.machinery.${j}.location`,null,'Location…')}</div>
+        <div class="hrs">${j===0?'<label class="f">Hours</label>':''}<input type="number" inputmode="decimal" min="0" max="24" step="0.5" placeholder="Not known" value="${esc(m.hours)}" data-path="${P}.machinery.${j}.hours"></div>
+        <button class="x" type="button" data-act="delMc" data-i="${i}" data-j="${j}" aria-label="Remove machine">✕</button>
+      </div>`).join('') + `<button class="add-row" type="button" data-act="addMc" data-i="${i}">＋ Add machine</button>`;
+  }
+  const mcHrs=e.machinery.reduce((s,m)=>s+(num(m.hours)||0),0);
+  return `
+  <section class="card act${e._c?' collapsed':''}" id="act-${i}">
+    <div class="act-head" data-act="toggle" data-i="${i}">
+      <span class="num">${i+1}</span>
+      <div class="ah-txt"><b>${esc(e.activity||'New activity')}</b><small id="sub-${i}">${esc(subline(e))}</small></div>
+      <button class="icon" type="button" data-act="dup" data-i="${i}" aria-label="Copy activity" title="Copy">⧉</button>
+      <button class="icon del" type="button" data-act="del" data-i="${i}" aria-label="Delete activity" title="Delete">✕</button>
+    </div>
+    <div class="act-body"${e._c?' hidden':''}>
+      <div class="grid">
+        <div class="full"><label class="f">Activity <span class="req">*</span></label>${selectHTML('activities',e.activity,`${P}.activity`,null,'Select activity…')}</div>
+        <div><label class="f">Location <span class="req">*</span></label>${selectHTML('locations',e.location,`${P}.location`,null,'Select location…')}</div>
+        <div><label class="f">Floor / level <span class="req">*</span></label>${selectHTML('floors',e.floor,`${P}.floor`,null,'Select floor…')}</div>
+        <div class="full"><label class="f">Work description <span class="req">*</span></label>${
+          e.activity ? selectHTML('descriptions',e.desc,`${P}.desc`,e.activity,'Select description…')
+                     : '<select disabled><option>Select activity first</option></select>'}</div>
+        <div><label class="f">Qty of work achieved</label><input type="number" inputmode="decimal" min="0" step="any" placeholder="Leave blank if not measured" value="${esc(e.qty)}" data-path="${P}.qty"></div>
+        <div><label class="f">Unit</label>${selectHTML('units',e.unit,`${P}.unit`,null,'Unit…')}</div>
+      </div>
+
+      <div class="sub">
+        <div class="sub-h"><b>Manpower engaged</b><span class="pill" id="mpt-${i}">${mpTotal} total</span></div>
+        ${mp}
+        <button class="add-row" type="button" data-act="addMp" data-i="${i}">＋ Add manpower line</button>
+      </div>
+
+      <div class="sub">
+        <label class="switch">
+          <span><b style="font-size:13px">Machinery used</b><br><small class="note" id="mch-${i}">${e.machOn?(e.machinery.length+' machine(s) · '+mcHrs+' h'):'Tap to add machine type, location & hours'}</small></span>
+          <input type="checkbox" data-path="${P}.machOn"${e.machOn?' checked':''}><span class="track"></span>
+        </label>
+        ${e.machOn?`<div style="margin-top:10px">${mc}</div>`:''}
+      </div>
+
+      <div class="sub">
+        <label class="f">Remarks (optional)</label>
+        <textarea data-path="${P}.remarks" placeholder="Hindrance, instruction received, etc.">${esc(e.remarks)}</textarea>
+      </div>
+    </div>
+  </section>`;
+}
+function renderHeader(){
+  $('#projSel').innerHTML = selectHTML('projects',S.project,'h.project',null,'Select project…');
+  $('#engSel').innerHTML = selectHTML('engineers',S.engineer,'h.engineer',null,'Select engineer…');
+  $('#hDate').value = S.date||'';
+  $('#dateDD').textContent = S.date ? 'Report date: '+ddmmyyyy(S.date) : '';
+  const p = PROJECTS.find(x=>x.name===S.project);
+  $('#projMeta').innerHTML = p
+    ? p.meta.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')
+    : (S.project ? `<dt>Status</dt><dd><span class="tag">NEW PROJECT · DETAILS PENDING APPROVAL</span></dd>` : '');
+  $('#topSub').textContent = (S.project||'Civil Experts PMC · DPCS') + (S.date?' · '+ddmmyyyy(S.date):'');
+}
+function renderEntries(){
+  $('#entries').innerHTML = S.entries.map(entryHTML).join('');
+  renderExtras();
+}
+function renderExtras(){
+  const tp = S.tomorrow.map((t,j)=>`
+    <div class="mpbox">
+      <div class="mpbox-h"><span>Plan ${j+1}</span><button class="x" type="button" data-act="delPlan" data-j="${j}" aria-label="Remove plan item">✕</button></div>
+      <div class="grid">
+        <div><label class="f">Location</label>${selectHTML('locations',t.location,`t.${j}.location`,null,'Location…')}</div>
+        <div><label class="f">Activity</label>${selectHTML('activities',t.activity,`t.${j}.activity`,null,'Activity…')}</div>
+        <div><label class="f">Target qty (optional)</label><input type="number" inputmode="decimal" min="0" step="any" placeholder="—" value="${esc(t.qty)}" data-path="t.${j}.qty"></div>
+        <div><label class="f">Unit</label>${selectHTML('units',t.unit,`t.${j}.unit`,null,'Unit…')}</div>
+      </div>
+    </div>`).join('');
+  const at = S.attention.map((a,j)=>`
+    <div class="mpbox">
+      <div class="mpbox-h"><span>Item ${j+1}</span><button class="x" type="button" data-act="delAtt" data-j="${j}" aria-label="Remove attention item">✕</button></div>
+      <div class="grid">
+        <div><label class="f">Category</label>${selectHTML('attcats',a.category,`a.${j}.category`,null,'Category…')}</div>
+        <div><label class="f">Severity</label>${selectHTML('severity',a.severity,`a.${j}.severity`,null,'Severity…')}</div>
+        <div class="full"><label class="f">Location (optional)</label>${selectHTML('locations',a.location,`a.${j}.location`,null,'Location…')}</div>
+        <div class="full"><label class="f">Details</label><textarea data-path="a.${j}.text" placeholder="e.g. Concrete material shortage — cement stock for 1 day">${esc(a.text)}</textarea></div>
+      </div>
+    </div>`).join('');
+  $('#extras').innerHTML = `
+    <section class="card"><h2>Tomorrow plan</h2>${tp}
+      <button class="add-row" type="button" data-act="addPlan">＋ Add plan item</button></section>
+    <section class="card"><h2>Management attention / hindrance</h2>${at}
+      <button class="add-row" type="button" data-act="addAtt">＋ Add attention item</button></section>`;
+}
+function render(){ renderHeader(); renderEntries(); }
+
+/* ---------- state mutation ---------- */
+const ROOT = {e:'entries',t:'tomorrow',a:'attention'};
+function setPath(path,val){
+  const parts=path.split('.');
+  if(parts[0]==='h'){ S[parts[1]]=val; return; }
+  let o=S[ROOT[parts.shift()]];
+  for(let k=0;k<parts.length-1;k++){ o=o[parts[k]]; }
+  o[parts[parts.length-1]]=val;
+}
+function getPath(path){
+  const parts=path.split('.');
+  if(parts[0]==='h') return S[parts[1]];
+  let o=S[ROOT[parts.shift()]];
+  for(const k of parts){ o=o==null?undefined:o[k]; }
+  return o;
+}
+let saveT;
+function saveDraft(silent){
+  const ok = store.set(K_DRAFT,S);
+  $('#savedState').textContent = ok ? 'Saved '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',timeZone:TZ}) : 'Not saved';
+  if(!silent) toast(ok?'Draft saved on this phone':'Could not save draft on this browser');
+}
+function autosave(){ clearTimeout(saveT); saveT=setTimeout(()=>saveDraft(true),500); }
+
+/* ---------- events ---------- */
+document.addEventListener('change',ev=>{
+  const el=ev.target; const path=el.dataset&&el.dataset.path; if(!path) return;
+  el.classList.remove('err');
+  if(el.tagName==='SELECT' && el.value==='__add__'){
+    const prev=getPath(path)||''; el.value=prev;
+    openAdd(el.dataset.cat, el.dataset.ctx, v=>{ setPath(path,v); afterSelect(path); });
+    return;
+  }
+  if(el.type==='checkbox'){
+    setPath(path,el.checked);
+    const i=+path.split('.')[1];
+    if(el.checked && !S.entries[i].machinery.length) S.entries[i].machinery.push({type:'',location:S.entries[i].location||'',hours:''});
+    renderEntries(); autosave(); return;
+  }
+  if(el.tagName==='SELECT'){ setPath(path,el.value); afterSelect(path); return; }
+  if(path==='h.date'){ setPath(path,el.value); renderHeader(); autosave(); }
+});
+function afterSelect(path){
+  const parts=path.split('.');
+  if(parts[0]==='e' && parts[2]==='activity'){
+    const e=S.entries[+parts[1]]; const a=ACTIVITIES.find(x=>x.n===e.activity);
+    e.desc=''; if(a && !e.unit) e.unit=a.u;
+  }
+  if(parts[0]==='t' && parts[2]==='activity'){
+    const t=S.tomorrow[+parts[1]]; const a=ACTIVITIES.find(x=>x.n===t.activity); if(a && !t.unit) t.unit=a.u;
+  }
+  if(parts[0]==='h') renderHeader(); else renderEntries();
+  autosave();
+}
+document.addEventListener('input',ev=>{
+  const el=ev.target; const path=el.dataset&&el.dataset.path; if(!path||el.tagName==='SELECT'||el.type==='checkbox') return;
+  if(path==='h.date') return;
+  el.classList.remove('err');
+  setPath(path,el.value);
+  const parts=path.split('.');
+  if(parts[0]==='e'){
+    const i=+parts[1], e=S.entries[i];
+    const sub=$('#sub-'+i); if(sub) sub.textContent=subline(e);
+    const mpt=$('#mpt-'+i); if(mpt) mpt.textContent=e.manpower.reduce((s,m)=>s+(num(m.count)||0),0)+' total';
+    const mch=$('#mch-'+i); if(mch&&e.machOn) mch.textContent=e.machinery.length+' machine(s) · '+e.machinery.reduce((s,m)=>s+(num(m.hours)||0),0)+' h';
+  }
+  autosave();
+});
+document.addEventListener('click',ev=>{
+  const b=ev.target.closest('[data-act]'); if(!b) return;
+  const act=b.dataset.act, i=+b.dataset.i, j=+b.dataset.j;
+  if(act==='toggle'){ if(ev.target.closest('.icon')) return; S.entries[i]._c=!S.entries[i]._c; renderEntries(); autosave(); return; }
+  ev.stopPropagation();
+  if(act==='addPlan'){ S.tomorrow.push(blankPlan()); renderExtras(); autosave(); return; }
+  if(act==='delPlan'){ S.tomorrow.splice(j,1); if(!S.tomorrow.length) S.tomorrow.push(blankPlan()); renderExtras(); autosave(); return; }
+  if(act==='addAtt'){ S.attention.push(blankAtt()); renderExtras(); autosave(); return; }
+  if(act==='delAtt'){ S.attention.splice(j,1); if(!S.attention.length) S.attention.push(blankAtt()); renderExtras(); autosave(); return; }
+  const e=S.entries[i];
+  if(act==='addMp'){ e.manpower.push(blankMp(e.manpower[e.manpower.length-1])); }
+  else if(act==='delMp'){ e.manpower.splice(j,1); if(!e.manpower.length) e.manpower.push(blankMp()); }
+  else if(act==='addMc'){ e.machinery.push({type:'',location:e.location||'',hours:''}); }
+  else if(act==='delMc'){ e.machinery.splice(j,1); if(!e.machinery.length) e.machOn=false; }
+  else if(act==='dup'){
+    const c=JSON.parse(JSON.stringify(e)); c.id=uid('E-'); c.qty=''; c.remarks=''; c._c=false;
+    S.entries.forEach(x=>x._c=true); S.entries.splice(i+1,0,c); renderEntries(); autosave();
+    scrollToAct(i+1); toast('Activity copied — update qty'); return;
+  }
+  else if(act==='del'){
+    const filled = e.activity||e.qty||e.location;
+    const go=()=>{ S.entries.splice(i,1); if(!S.entries.length) S.entries.push(blankEntry()); renderEntries(); autosave(); };
+    if(filled) confirmBox('Delete activity '+(i+1)+'?', esc(e.activity||'This activity')+' will be removed from this report.', [['Cancel',''],['Delete','pri',go]]);
+    else go();
+    return;
+  }
+  renderEntries(); autosave();
+});
+function addActivity(){
+  S.entries.forEach(x=>x._c=true);
+  const last=S.entries[S.entries.length-1];
+  const n=blankEntry(); if(last){ n.location=last.location; n.floor=last.floor; }
+  S.entries.push(n); renderEntries(); autosave(); scrollToAct(S.entries.length-1);
+}
+function scrollToAct(i){ const el=$('#act-'+i); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+$('#btnAddAct').onclick=addActivity; $('#btnAddAct2').onclick=addActivity;
+$('#btnSave').onclick=()=>saveDraft(false);
+
+/* ---------- Add-new modal ---------- */
+let addCtx=null;
+function openAdd(cat,ctx,cb){
+  addCtx={cat,ctx,cb};
+  $('#addTitle').textContent='Add new '+(CAT_LABEL[cat]||'item');
+  $('#addHint').innerHTML = (cat==='descriptions'?`For activity <b>${esc(ctx)}</b>. `:'') + 'Saved on this phone and marked <b>pending approval</b> until it is added to the master list.';
+  $('#addInput').value=''; $('#addWarn').textContent='';
+  $('#addScrim').hidden=false; setTimeout(()=>$('#addInput').focus(),50);
+}
+function closeAdd(){ $('#addScrim').hidden=true; addCtx=null; }
+$('#addCancel').onclick=closeAdd;
+$('#addScrim').addEventListener('click',e=>{ if(e.target.id==='addScrim') closeAdd(); });
+$('#addInput').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); $('#addOk').click(); } });
+$('#addOk').onclick=()=>{
+  if(!addCtx) return;
+  const raw=$('#addInput').value.trim().replace(/\s+/g,' ');
+  if(raw.length<2){ $('#addWarn').textContent='Please type at least 2 characters.'; return; }
+  const {base,add}=lists(addCtx.cat,addCtx.ctx);
+  const hit=base.concat(add).find(o=>norm(o)===norm(raw));
+  const cb=addCtx.cb;
+  if(hit){ closeAdd(); cb(hit); toast('"'+hit+'" already exists — selected it'); return; }
+  addMaster(addCtx.cat,addCtx.ctx,raw); closeAdd(); cb(raw); toast('Added "'+raw+'" (pending approval)');
+};
+
+/* ---------- confirm box ---------- */
+function confirmBox(title,bodyHTML,btns){
+  $('#cfmTitle').textContent=title; $('#cfmBody').innerHTML=bodyHTML;
+  const wrap=$('#cfmBtns'); wrap.innerHTML='';
+  btns.forEach(([label,cls,fn])=>{
+    const b=document.createElement('button'); b.type='button'; b.className='btn '+(cls||''); b.textContent=label;
+    b.onclick=()=>{ $('#cfmScrim').hidden=true; if(fn) fn(); }; wrap.appendChild(b);
+  });
+  $('#cfmScrim').hidden=false;
+}
+$('#cfmScrim').addEventListener('click',e=>{ if(e.target.id==='cfmScrim') $('#cfmScrim').hidden=true; });
+
+/* ---------- validation & submit ---------- */
+function validate(){
+  document.querySelectorAll('.err').forEach(x=>x.classList.remove('err'));
+  const bad=[]; const mark=p=>{ bad.push(p); };
+  if(!S.project) mark('h.project'); if(!S.date) mark('h.date'); if(!S.engineer) mark('h.engineer');
+  S.entries.forEach((e,i)=>{
+    const P='e.'+i;
+    ['activity','location','floor','desc'].forEach(f=>{ if(!e[f]) mark(P+'.'+f); });
+    if(num(e.qty)!=null && !e.unit) mark(P+'.unit');
+    if(e.qty!=='' && (num(e.qty)==null || +e.qty<0)) mark(P+'.qty');
+    e.manpower.forEach((m,j)=>{
+      const has=m.trade||m.count!==''||m.agency||m.basis;
+      if(has && !m.agency) mark(`${P}.manpower.${j}.agency`);
+      if(has && !m.basis) mark(`${P}.manpower.${j}.basis`);
+      if(has && !m.trade) mark(`${P}.manpower.${j}.trade`);
+      if(has && !(num(m.count)>0 && Number.isInteger(+m.count))) mark(`${P}.manpower.${j}.count`);
+    });
+    if(e.machOn) e.machinery.forEach((m,j)=>{
+      if(!m.type) mark(`${P}.machinery.${j}.type`);
+      if(!m.location) mark(`${P}.machinery.${j}.location`);
+      const h=num(m.hours); if(m.hours!=='' && (h==null||h<0||h>24)) mark(`${P}.machinery.${j}.hours`);
+    });
+  });
+  S.tomorrow.forEach((t,j)=>{
+    const has=t.location||t.activity||t.qty!=='';
+    if(has && !t.location) mark(`t.${j}.location`);
+    if(has && !t.activity) mark(`t.${j}.activity`);
+    if(t.qty!=='' && !t.unit) mark(`t.${j}.unit`);
+  });
+  S.attention.forEach((a,j)=>{
+    const has=a.category||a.severity||a.text.trim()||a.location;
+    if(has && !a.category) mark(`a.${j}.category`);
+    if(has && !a.severity) mark(`a.${j}.severity`);
+    if(has && !a.text.trim()) mark(`a.${j}.text`);
+  });
+  // expand cards with errors, then mark
+  const cards=new Set(bad.filter(p=>p.startsWith('e.')).map(p=>+p.split('.')[1]));
+  if(cards.size){ cards.forEach(i=>S.entries[i]._c=false); renderEntries(); }
+  bad.forEach(p=>{ const el=document.querySelector(`[data-path="${p}"]`); if(el) el.classList.add('err'); });
+  if(bad.length){ const first=document.querySelector('.err'); if(first) first.scrollIntoView({behavior:'smooth',block:'center'}); }
+  return bad.length;
+}
+$('#btnSubmit').onclick=()=>{
+  const n=validate();
+  if(n){ toast(n+' field(s) need attention'); return; }
+  const mp=S.entries.reduce((s,e)=>s+e.manpower.reduce((a,m)=>a+(num(m.count)||0),0),0);
+  const hrs=S.entries.reduce((s,e)=>s+(e.machOn?e.machinery.reduce((a,m)=>a+(num(m.hours)||0),0):0),0);
+  const nr=S.entries.filter(e=>num(e.qty)==null).length;
+  confirmBox('Submit field report?',
+    `<p style="margin:0 0 6px"><b>${esc(S.project)}</b><br>${ddmmyyyy(S.date)} · ${esc(S.engineer)}</p>
+     <p style="margin:0">${S.entries.length} activit${S.entries.length>1?'ies':'y'} · ${mp} manpower · ${hrs} machine-hours</p>
+     ${nr?`<p class="note" style="color:var(--amber)">${nr} activit${nr>1?'ies have':'y has'} no quantity — will show as “Not reported”.</p>`:''}
+     <p class="note">After submitting, this report is locked. Corrections go in as a new amendment.</p>`,
+    [['Back',''],['Submit','pri',doSubmit]]);
+};
+function buildRecord(){
+  return {
+    report_id: 'SEFR-'+S.date.replace(/-/g,'')+'-'+uid().slice(-6),
+    form:'SITE_ENGINEERING_FIELD_REPORT_CARD', version:1,
+    project_id: (PROJECTS.find(p=>p.name===S.project)||{}).id || 'NEW-PENDING',
+    project_name:S.project, date_iso:S.date, timezone:TZ, site_engineer:S.engineer,
+    submitted_at_iso:nowISO(), status:'SUBMITTED', verification_status:'NOT VERIFIED',
+    data_basis:'SITE REPORTED - NOT VERIFIED',
+    entries:S.entries.map((e,i)=>({
+      entry_id:e.id, entry_no:i+1, activity:e.activity, location:e.location, floor:e.floor, work_description:e.desc,
+      qty_achieved:num(e.qty), unit:num(e.qty)!=null?e.unit:'', qty_status:num(e.qty)==null?'NOT REPORTED':'REPORTED',
+      manpower:e.manpower.filter(m=>m.trade&&num(m.count)).map(m=>({
+        team_type:m.agency==='In-house team'?'IN-HOUSE':'CONTRACTOR', contractor_or_team:m.agency,
+        engagement_basis:m.basis, trade:m.trade, headcount:+m.count})),
+      machinery:e.machOn?e.machinery.map(m=>({machine_type:m.type,working_location:m.location,hours:num(m.hours)})):[],
+      remarks:e.remarks||''
+    })),
+    tomorrow_plan:S.tomorrow.filter(t=>t.location&&t.activity).map((t,k)=>({plan_no:k+1,location:t.location,activity:t.activity,target_qty:num(t.qty),unit:num(t.qty)!=null?t.unit:''})),
+    attention:S.attention.filter(a=>a.category&&a.text.trim()).map((a,k)=>({item_no:k+1,category:a.category,severity:a.severity,location:a.location||'',description:a.text.trim()})),
+    pending_masters: JSON.parse(JSON.stringify(added))
+  };
+}
+/* ---------- Google Sheet sync (outbox) ---------- */
+// When this page is served by the Apps Script web app itself, submit through google.script.run (no URL needed).
+const HOSTED = typeof google!=='undefined' && google.script && google.script.run;
+const endpoint = () => HOSTED ? 'apps-script' : (store.get(K_URL,'') || SUBMIT_ENDPOINT || '').trim();
+let syncing=false;
+function callApi(body){
+  if(HOSTED){
+    return new Promise(res=>google.script.run
+      .withSuccessHandler(t=>{ try{ res(JSON.parse(t)); }catch(e){ res({ok:false,error:'BAD_REPLY'}); } })
+      .withFailureHandler(()=>res({ok:false,error:'OFFLINE'}))
+      .submitReport(JSON.stringify(body)));
+  }
+  const url=endpoint(); if(!url) return Promise.resolve({ok:false,error:'NOT_CONNECTED'});
+  return fetch(url,{method:'POST',credentials:'omit',redirect:'follow',body:JSON.stringify(body)})
+    .then(r=>r.json()).catch(()=>({ok:false,error:'OFFLINE'}));
+}
+function auth(){ const a=store.get(K_AUTH,null); return (a && a.token && (!a.expires || new Date(a.expires)>new Date())) ? a : null; }
+async function sendOne(rec){
+  const a=auth(); if(!a) return {ok:false,error:'SIGNIN_REQUIRED'};
+  const j=await callApi({action:'submit',token:a.token,report:rec});
+  if(j && j.error==='SIGNIN_REQUIRED'){ store.del(K_AUTH); if(window.showLogin) showLogin('Your sign-in has ended. Please sign in again — your report is safe on this phone.'); }
+  return j;
+}
+async function syncAll(showMsg){
+  if(syncing) return; syncing=true;
+  const done=store.get(K_DONE,[]); let sent=0, failed=0, lastErr='';
+  for(const r of done.slice().reverse()){            // oldest first
+    if(r.sync==='SYNCED') continue;
+    const res=await sendOne(r);
+    if(res.ok){ r.sync='SYNCED'; r.sync_error=''; sent++; }
+    else { r.sync = ['OFFLINE','NOT_CONNECTED','SIGNIN_REQUIRED'].includes(res.error) ? 'PENDING' : 'ERROR'; r.sync_error=res.error||''; failed++; lastErr=res.error; if(['OFFLINE','NOT_CONNECTED','SIGNIN_REQUIRED'].includes(res.error)) break; }
+  }
+  store.set(K_DONE,done); syncing=false;
+  if(current){ const c=done.find(x=>x.report_id===current.report_id); if(c) showReport(c,true); }
+  if(showMsg){
+    if(!endpoint()) toast('Google Sheet not connected yet — saved on this phone');
+    else if(failed && lastErr==='SIGNIN_REQUIRED') toast('Please sign in — report kept on this phone');
+    else if(failed) toast(lastErr==='OFFLINE'?'No internet — will retry automatically':'Sync problem: '+lastErr);
+    else toast(sent?sent+' report(s) saved to Google Sheet':'Everything is already in Google Sheet');
+  }
+  return {sent,failed};
+}
+window.addEventListener('online',()=>syncAll(false));
+
+async function doSubmit(){
+  const rec=buildRecord(); rec.sync='PENDING';
+  const done=store.get(K_DONE,[]); done.unshift(rec); store.set(K_DONE,done.slice(0,60));
+  store.del(K_DRAFT); S=blankReport();
+  showReport(rec);
+  toast('Submitting…');
+  await syncAll(true);
+}
+
+/* ---------- report view ---------- */
+let current=null;
+function syncChip(rec){
+  if(rec.sync==='SYNCED') return '<span class="sync ok">✓ Saved to Google Sheet</span>';
+  if(rec.sync==='ERROR') return `<span class="sync err">Not saved: ${esc(rec.sync_error)}</span>`;
+  return `<span class="sync wait">${endpoint()?'Waiting to sync':'On this phone only'}</span>`;
+}
+function showReport(rec,keepScroll){
+  current=rec;
+  const mp=rec.entries.reduce((s,e)=>s+e.manpower.reduce((a,m)=>a+m.headcount,0),0);
+  const hrs=rec.entries.reduce((s,e)=>s+e.machinery.reduce((a,m)=>a+(m.hours||0),0),0);
+  const mcN=rec.entries.reduce((s,e)=>s+e.machinery.length,0);
+  const p=PROJECTS.find(x=>x.id===rec.project_id);
+  const items=rec.entries.map(e=>`
+    <div class="ritem">
+      <div class="h"><b>${e.entry_no}. ${esc(e.activity)}</b>
+        ${e.qty_achieved!=null?`<span class="q">${e.qty_achieved} ${esc(e.unit)}</span>`:`<span class="q nr">Not reported</span>`}</div>
+      <dl>
+        <dt>Location</dt><dd>${esc(e.location)} · ${esc(e.floor)}</dd>
+        <dt>Work</dt><dd>${esc(e.work_description)}</dd>
+        <dt>Manpower</dt><dd>${e.manpower.length?e.manpower.map(m=>`${esc(m.contractor_or_team||'')} <small class="note">(${esc((m.engagement_basis||'').split(' (')[0])})</small> – ${esc(m.trade)} ${m.headcount}`).join('<br>')+`<br><b>Total ${e.manpower.reduce((a,m)=>a+m.headcount,0)}</b>`:'—'}</dd>
+        <dt>Machinery</dt><dd>${e.machinery.length?e.machinery.map(m=>`${esc(m.machine_type)} @ ${esc(m.working_location)} – ${m.hours==null?'hours not reported':m.hours+' h'}`).join('<br>'):'—'}</dd>
+        ${e.remarks?`<dt>Remarks</dt><dd>${esc(e.remarks)}</dd>`:''}
+      </dl>
+    </div>`).join('');
+  $('#reportView').innerHTML=`
+    <section class="card rep">
+      <div class="rep-head">
+        <div><div class="t">Site Engineering Field Report Card</div>
+          <div style="font-size:14px;margin-top:2px"><b>${esc(rec.project_name)}</b></div>
+          <div class="note">Date ${ddmmyyyy(rec.date_iso)} · Site engineer ${esc(rec.site_engineer)} · ${esc(rec.report_id)}</div></div>
+        <div><span class="tag">SITE REPORTED · NOT VERIFIED</span><br><span style="display:inline-block;margin-top:6px">${syncChip(rec)}</span>
+          ${rec.sync!=='SYNCED'?'<br><button class="btn noprint" type="button" id="btnSyncOne" style="min-height:38px;margin-top:6px;flex:none;padding:0 14px">Sync now</button>':''}</div>
+      </div>
+      ${p?`<dl class="proj-meta">${p.meta.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>`:''}
+      <div class="kpis">
+        <div class="kpi"><b>${rec.entries.length}</b><span>Activities</span></div>
+        <div class="kpi"><b>${mp}</b><span>Manpower</span></div>
+        <div class="kpi"><b>${mcN}</b><span>Machines</span></div>
+        <div class="kpi"><b>${hrs}</b><span>Machine-hrs</span></div>
+      </div>
+      <h2>Activities</h2>
+      ${items}
+      ${(rec.tomorrow_plan||[]).length?`<h2 style="margin-top:16px">Tomorrow plan</h2>`+rec.tomorrow_plan.map(t=>`<div class="ritem"><div class="h"><b>${t.plan_no}. ${esc(t.activity)}</b><span class="q">${t.target_qty!=null?t.target_qty+' '+esc(t.unit):''}</span></div><div class="note">${esc(t.location)}</div></div>`).join(''):''}
+      ${(rec.attention||[]).length?`<h2 style="margin-top:16px">Management attention</h2>`+rec.attention.map(a=>`<div class="ritem"><div class="h"><b>${esc(a.category)}</b><span class="q nr">${esc(a.severity)}</span></div><div style="font-size:14px;margin-top:4px">${esc(a.description)}</div>${a.location?`<div class="note">${esc(a.location)}</div>`:''}</div>`).join(''):''}
+      <p class="note">Submitted ${new Date(rec.submitted_at_iso).toLocaleString('en-IN',{timeZone:TZ,day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(/\//g,'-')} IST. Quantities are as reported by site and are not measurement-book certified.</p>
+    </section>`;
+  $('#formView').hidden=true; $('#reportView').hidden=false;
+  $('#barForm').hidden=true; $('#barReport').hidden=false;
+  $('#topSub').textContent=rec.project_name+' · '+ddmmyyyy(rec.date_iso);
+  const bs=$('#btnSyncOne'); if(bs) bs.onclick=()=>syncAll(true);
+  if(!keepScroll) window.scrollTo(0,0);
+}
+function showForm(){
+  current=null; $('#reportView').hidden=true; $('#formView').hidden=false;
+  $('#barReport').hidden=true; $('#barForm').hidden=false; render(); window.scrollTo(0,0);
+}
+$('#btnPrint').onclick=()=>window.print();
+$('#btnNew').onclick=()=>showForm();
+
+/* ---------- export ---------- */
+function csvCell(v){ v=v==null?'':String(v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+function toCSV(rec){
+  const head=['report_id','date_iso','date_display','project_id','project_name','site_engineer','entry_no','entry_id','activity','location','floor','work_description','qty_achieved','unit','qty_status','manpower_total','manpower_detail','machinery_detail','machine_hours_total','remarks','data_basis','submitted_at_iso'];
+  const rows=rec.entries.map(e=>[rec.report_id,rec.date_iso,ddmmyyyy(rec.date_iso),rec.project_id,rec.project_name,rec.site_engineer,e.entry_no,e.entry_id,e.activity,e.location,e.floor,e.work_description,
+    e.qty_achieved==null?'':e.qty_achieved,e.unit,e.qty_status,e.manpower.reduce((a,m)=>a+m.headcount,0),
+    e.manpower.map(m=>`${m.contractor_or_team||''} [${m.engagement_basis||''}] ${m.trade}:${m.headcount}`).join('; '),
+    e.machinery.map(m=>m.machine_type+' @ '+m.working_location+' : '+(m.hours==null?'n/r':m.hours+'h')).join('; '),
+    e.machinery.reduce((a,m)=>a+(m.hours||0),0),e.remarks,rec.data_basis,rec.submitted_at_iso]);
+  return '﻿'+[head].concat(rows).map(r=>r.map(csvCell).join(',')).join('\r\n');
+}
+function download(name,text,type){
+  const blob=new Blob([text],{type}); const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500);
+}
+$('#btnCSV').onclick=()=>{ if(current) download(current.report_id+'.csv',toCSV(current),'text/csv;charset=utf-8'); };
+
+/* ---------- history ---------- */
+$('#btnHistory').onclick=()=>{
+  const done=store.get(K_DONE,[]);
+  const list = done.length ? done.map((r,k)=>`
+    <div class="hist"><div><b>${ddmmyyyy(r.date_iso)}</b> · ${r.entries.length} activit${r.entries.length>1?'ies':'y'} ${syncChip(r)}<br><small class="note">${esc(r.site_engineer)} · ${esc(r.report_id)}</small></div>
+    <button class="btn" type="button" style="flex:none;min-height:40px" data-open="${k}">Open</button></div>`).join('')
+    : '<p class="empty">No submitted reports on this phone yet.</p>';
+  const pending=done.filter(r=>r.sync!=='SYNCED').length;
+  const conn= HOSTED ? `<div class="sub" style="margin-top:14px"><div class="note" style="color:var(--ok)">✓ This form saves directly to the Google Sheet.</div>
+      <button class="btn pri" type="button" id="btnSyncAll" style="margin-top:8px;width:100%"${pending?'':' disabled'}>Sync ${pending||''} now</button></div>` : `<div class="sub" style="margin-top:14px">
+      <label class="f">Google Sheet connection (Web App URL)</label>
+      <input type="text" id="urlInput" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(endpoint())}" autocomplete="off">
+      <div class="row" style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn" type="button" id="btnTestUrl">Save &amp; test</button>
+        <button class="btn pri" type="button" id="btnSyncAll"${pending?'':' disabled'}>Sync ${pending||''} now</button>
+      </div><div class="note" id="urlMsg">${endpoint()?'Connected URL saved on this phone.':'Not connected — reports stay on this phone until a URL is set.'}</div></div>`;
+  confirmBox('Submitted reports', list + conn + (S.entries.some(e=>e.activity)?`<p class="note" style="margin-top:12px">You also have a draft in progress for ${ddmmyyyy(S.date)}.</p>`:''),
+    [['Close',''],['Back to draft','pri',()=>{ if(current) showForm(); }]]);
+  document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{ $('#cfmScrim').hidden=true; showReport(done[+b.dataset.open]); });
+  $('#btnSyncAll').onclick=async()=>{ $('#cfmScrim').hidden=true; await syncAll(true); };
+  if($('#btnTestUrl')) $('#btnTestUrl').onclick=async()=>{
+    const u=$('#urlInput').value.trim(); const msg=$('#urlMsg');
+    if(u && !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(u)){ msg.textContent='That does not look like an Apps Script Web App URL ending in /exec.'; msg.style.color='var(--red)'; return; }
+    store.set(K_URL,u); if(!u){ msg.textContent='Connection removed.'; return; }
+    msg.textContent='Testing…'; msg.style.color='';
+    try{ const j=await (await fetch(u+'?action=ping',{credentials:'omit'})).json(); msg.textContent = j.ok?'✓ Connected to Google Sheet':'Reached URL but got an unexpected reply'; msg.style.color=j.ok?'var(--ok)':'var(--red)'; }
+    catch(err){ msg.textContent='Could not reach the URL. Check deployment access is “Anyone”.'; msg.style.color='var(--red)'; }
+  };
+};
+
+/* ---------- init ---------- */
+// migrate drafts saved before manpower agency/basis fields existed
+S.entries.forEach(e=>e.manpower.forEach(m=>{ if(m.agency===undefined){ m.agency=''; m.basis=''; } }));
+if(!S.tomorrow) S.tomorrow=[blankPlan()]; if(!S.attention) S.attention=[blankAtt()];
+render();
+if(store.get(K_DRAFT,null)) $('#savedState').textContent='Draft restored';
+if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) syncAll(false);
+</script>
+
+<div id="loginScrim" style="position:fixed;inset:0;z-index:200;background:#122840;display:none;align-items:center;justify-content:center;padding:20px;overflow:auto">
+  <form id="loginForm" autocomplete="on" style="background:#fff;border-radius:16px;padding:24px 20px;width:100%;max-width:360px;box-shadow:0 10px 30px rgba(0,0,0,.3)">
+    <div style="text-align:center;margin-bottom:14px">
+      <div style="display:inline-block;background:#122840;color:#fff;font-weight:800;letter-spacing:2px;font-size:22px;padding:10px 16px;border-radius:12px;border-bottom:4px solid #117F87">DPCS</div>
+      <h2 style="margin:12px 0 2px;font-size:18px;color:#122840">Site Report sign-in</h2>
+      <div style="font-size:13px;color:#5B6B7C">Civil Experts PMC · Digital Project Control System</div>
+    </div>
+    <label class="f" for="lgMobile">Mobile number</label>
+    <input id="lgMobile" name="username" type="tel" inputmode="numeric" autocomplete="username" maxlength="14" placeholder="10-digit mobile" style="width:100%;min-height:46px;padding:10px 12px;border:1px solid #DCE3EC;border-radius:10px;font-size:16px;margin-bottom:12px">
+    <label class="f" for="lgPin">PIN</label>
+    <input id="lgPin" name="password" type="password" inputmode="numeric" autocomplete="current-password" maxlength="8" placeholder="4–6 digit PIN" style="width:100%;min-height:46px;padding:10px 12px;border:1px solid #DCE3EC;border-radius:10px;font-size:16px">
+    <button class="btn pri" type="submit" id="lgBtn" style="width:100%;margin-top:16px;min-height:48px">Sign in</button>
+    <div id="lgMsg" style="font-size:13px;margin-top:10px;min-height:18px;text-align:center"></div>
+    <p style="font-size:12px;color:#5B6B7C;text-align:center;margin:8px 0 0">No PIN yet? Ask your project manager to add you.</p>
+  </form>
+</div>
+<script>
+(function(){
+  const scrim=document.getElementById('loginScrim'), f=document.getElementById('loginForm'), msg=document.getElementById('lgMsg');
+  const ERR={BAD_LOGIN:'Mobile number or PIN is wrong.',BLOCKED:'Your access is blocked. Contact the project manager.',
+    LOCKED:'Too many wrong tries. Try again after 15 minutes.',OFFLINE:'No internet. Connect and try again.',NOT_CONNECTED:'App is not connected to the server.'};
+  window.showLogin=function(note){ msg.textContent=note||''; msg.style.color='#5B6B7C'; scrim.style.display='flex'; };
+  function userChip(){
+    const a=auth(); const row=document.querySelector('.top .row'); if(!a||!row) return;
+    let b=document.getElementById('btnUser');
+    if(!b){ b=document.createElement('button'); b.id='btnUser'; b.type='button'; b.className='hbtn'; row.appendChild(b);
+      b.onclick=()=>confirmBox('Signed in',`<p style="margin:0">${esc(auth()?auth().name:'')}<br><span class="note">${esc(auth()?auth().mobile:'')} · ${esc(auth()?auth().role:'')}</span></p>`,
+        [['Close',''],['Sign out','',()=>{ store.del(K_AUTH); b.remove(); showLogin('Signed out.'); }]]); }
+    b.textContent='👤 '+String(a.name).split(' ')[0];
+  }
+  f.onsubmit=async e=>{
+    e.preventDefault();
+    const m=document.getElementById('lgMobile').value.replace(/\D/g,''), p=document.getElementById('lgPin').value.trim();
+    if(m.length<10 || !/^\d{4,8}$/.test(p)){ msg.textContent='Enter your 10-digit mobile number and PIN.'; msg.style.color='#B7443E'; return; }
+    const btn=document.getElementById('lgBtn'); btn.disabled=true; msg.textContent='Signing in…'; msg.style.color='#5B6B7C';
+    const j=await callApi({action:'login',mobile:m,pin:p}); btn.disabled=false;
+    if(j && j.ok){
+      store.set(K_AUTH,{token:j.token,name:j.name,mobile:j.mobile,role:j.role,expires:j.expires});
+      document.getElementById('lgPin').value=''; scrim.style.display='none'; userChip();
+      toast('Welcome, '+j.name); if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED')) syncAll(true);
+    } else { msg.textContent=ERR[j&&j.error]||('Sign-in failed: '+((j&&j.error)||'unknown')); msg.style.color='#B7443E'; }
+  };
+  if(auth()) userChip(); else showLogin();
+})();
+</script>
+<script>
+/* DPCS PWA: offline shell + install prompt */
+if('serviceWorker' in navigator){ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+let dpcsInstall=null;
+window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); dpcsInstall=e;
+  if(document.getElementById('dpcsInstallBtn')) return;
+  const b=document.createElement('button'); b.id='dpcsInstallBtn'; b.type='button'; b.textContent='⬇ Install app';
+  b.style.cssText='position:fixed;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:60;background:#117F87;color:#fff;border:0;border-radius:22px;padding:10px 16px;font-weight:600;box-shadow:0 3px 10px rgba(0,0,0,.25)';
+  b.onclick=async()=>{ b.remove(); dpcsInstall.prompt(); dpcsInstall=null; };
+  document.body.appendChild(b);
+});
+window.addEventListener('appinstalled',()=>{ const b=document.getElementById('dpcsInstallBtn'); if(b) b.remove(); });
+</script>
+</body>
+</html>

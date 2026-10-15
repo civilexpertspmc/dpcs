@@ -1,0 +1,16 @@
+{
+  "name": "DPCS Site Report – Subhadra Towers",
+  "short_name": "DPCS Report",
+  "description": "Daily site engineering field report – DPCS by Civil Experts PMC",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F6F8FB",
+  "theme_color": "#122840",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
