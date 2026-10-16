@@ -1806,7 +1806,7 @@ window.dpcsPhoto={
   const val=id=>{ const el=B.querySelector('#'+id); return el?el.value.trim():''; };
   const evl=ids=>(ids||[]).map(id=>`<a href="#" data-ev="${esc(id)}">📷</a>`).join(' ');
 
-  const TABS=[['mat','🚚 Materials',p=>p.materials],['store','📦 Store',p=>p.store],['mach','🚜 Machines',p=>p.mach],['conc','🧱 Concrete',p=>p.pm||p.admin||p.qa],['qa','🧪 QA/QC',p=>p.qa],['acc','💰 Accounts',p=>p.accounts],['bill3','📑 Commercial',p=>p.accounts||p.pm],['appr','✅ Approvals',p=>p.pm||p.admin]];
+  const TABS=[['mat','🚚 Materials',p=>p.materials],['store','📦 Store',p=>p.store],['mach','🚜 Machines',p=>p.mach],['conc','🧱 Concrete',p=>p.pm||p.admin||p.qa],['qa','🧪 QA/QC',p=>p.qa],['acc','💰 Accounts',p=>p.accounts],['bill3','📑 Commercial',p=>p.accounts||p.pm],['appr','✅ Approvals',p=>p.pm||p.admin],['alrt','⚠️ Alerts',p=>p.pm]];
   window.deskBtn=function(){
     const a=auth(), row=document.querySelector('.top .row'); let t=document.getElementById('btnDesk');
     const p=a&&a.perms; const any=p&&TABS.some(x=>x[2](p));
@@ -1823,7 +1823,7 @@ window.dpcsPhoto={
     TB.querySelectorAll('.dkt').forEach(b=>b.onclick=()=>show(b.dataset.t));
     show(t||(tabs.find(x=>x[0]===tab)||tabs[0])[0]); }
   document.getElementById('dkClose').onclick=()=>{ scrim.style.display='none'; };
-  function show(t){ tab=t; TB.querySelectorAll('.dkt').forEach(b=>b.classList.toggle('on',b.dataset.t===t)); ({mat:Mat,store:Store,mach:Mach,conc:Conc,qa:QA,acc:Acc,bill3:Bill3,appr:Appr})[t](); }
+  function show(t){ tab=t; TB.querySelectorAll('.dkt').forEach(b=>b.classList.toggle('on',b.dataset.t===t)); ({mat:Mat,store:Store,mach:Mach,conc:Conc,qa:QA,acc:Acc,bill3:Bill3,appr:Appr,alrt:Alrt})[t](); }
   const seg=(key,items)=>{ sub[key]=sub[key]||items[0][0]; return `<div class="dkseg">${items.map(i=>`<button type="button" data-seg="${key}" data-v="${i[0]}" class="${sub[key]===i[0]?'on':''}">${i[1]}</button>`).join('')}</div>`; };
   const wireSeg=fn=>B.querySelectorAll('[data-seg]').forEach(b=>b.onclick=()=>{ sub[b.dataset.seg]=b.dataset.v; fn(); });
   const locs=()=>META.locations.map(l=>l.name);
@@ -1912,6 +1912,30 @@ window.dpcsPhoto={
     B.querySelectorAll('[data-ra2]').forEach(b=>b.onclick=async()=>{ const id=b.dataset.ra2; const x=await call({action:'recipe_approve',recipe_id:id,yield_m3:B.querySelector(`[data-ry="${CSS.escape(id)}"]`).value,source:B.querySelector(`[data-rs="${CSS.escape(id)}"]`).value}); toast(x.ok?'Recipe approved':ERR(x.error)); if(x.ok) Conc(); });
   }
   /* ---------------- v15 COMMERCIAL: rate versions, measurements, bill drafts with reservations, slab milestones, area register, value, decisions ---------------- */
+  /* ---------------- v15.1 ALERTS: low productivity vs PM-approved benchmark · stock cover · draft procurement plan ---------------- */
+  async function Alrt(){
+    B.innerHTML=`${seg('al',[['now','Today'],['bm','Benchmarks']])}<div id="dkIn"><div class="card note">Loading…</div></div>`; wireSeg(Alrt);
+    const IN=B.querySelector('#dkIn'), f=x=>x==null||x===''?'–':esc(String(x));
+    if(sub.al==='now'){ const a=await call({action:'control_alerts_pm',date:today(),write_sheet:true}); if(!a.ok){ IN.innerHTML='<div class="card note">'+esc(ERR(a.error))+'</div>'; return; }
+      const P=a.productivity, S=a.stock;
+      IN.innerHTML=`<div class="card"><h2>Low productivity · below ${f(P.threshold_pct)}% of benchmark</h2>${P.low.length?P.low.map(x=>`<div class="dkrow" style="border-left:4px solid #C13D42"><div class="t"><b>${esc(x.activity)} · ${f(x.workfront)}</b><b style="color:#C13D42">${f(x.efficiency_pct)}%</b></div><div class="s">${f(x.verified_qty)} ${esc(x.unit||'')} · ${x.labour_hours!=null?f(x.labour_hours)+' labour-h':f(x.machine_hours)+' machine-h'} · ${esc(x.contractor||'')}</div></div>`).join(''):'<p class="note">No verified activity below the threshold today.</p>'}
+        ${P.awaiting_benchmark.length?`<p class="note">Calculated but no approved benchmark yet: ${P.awaiting_benchmark.map(x=>esc(x.activity)).join(', ')} – add one under Benchmarks.</p>`:''}
+        ${P.not_calculated.length?`<p class="note">Not calculated (missing verification / qty / hours): ${P.not_calculated.map(x=>esc(x.activity)+' ('+esc(x.status)+')').join(', ')}</p>`:''}</div>
+        <div class="card"><h2>Stock cover · alert below ${f(S.alert_days)} days</h2>${S.low.length?`<table class="dktbl"><tr><th>Material</th><th>Stock</th><th>Use/day</th><th>Days</th><th>30-day gap</th></tr>${S.low.map(x=>`<tr style="background:#F8D7DA"><td>${esc(x.plan_group)}</td><td>${f(x.usable_stock)} ${esc(x.unit)}</td><td>${f(x.daily_rate)}</td><td><b>${f(x.days_cover)}</b></td><td>${f(x.order_gap)}</td></tr>`).join('')}</table>`:'<p class="note">All scheduled materials cover the alert period.</p>'}
+        ${a.procurement_sheet&&a.procurement_sheet.url?`<p><a href="${esc(a.procurement_sheet.url)}" target="_blank" rel="noopener">Open draft procurement plan</a></p>`:''}
+        <div class="dkact"><button class="btn pri" type="button" data-pd="APPROVED">Approve plan</button><button class="btn" type="button" data-pd="RETURNED">Return</button></div>
+        <p class="note">${esc(a.note)}</p></div>`;
+      IN.querySelectorAll('[data-pd]').forEach(b=>b.onclick=async()=>{ const x=await call({action:'procurement_decide',date:today(),decision:b.dataset.pd,command_id:'PD-'+today()+'-'+b.dataset.pd}); toast(x.ok?b.dataset.pd+' · '+x.lines+' lines':ERR(x.error)); });
+      return; }
+    const g=await call({action:'bench_list'}); if(!g.ok){ IN.innerHTML='<div class="card note">'+esc(ERR(g.error))+'</div>'; return; }
+    IN.innerHTML=`<div class="card"><h2>Set an approved benchmark (PM)</h2><div class="grid"><div><select id="bmA">${g.activities.map(a=>`<option value="${esc(a.id)}" data-u="${esc(a.unit)}">${esc(a.name)} (${esc(a.unit)})</option>`).join('')}</select></div>
+      <div><select id="bmB"><option value="LABOUR_HOUR">per labour-hour</option><option value="MACHINE_HOUR">per machine-hour</option></select></div>
+      <div><input type="number" step="any" id="bmQ" placeholder="Output qty (e.g. 30)"></div><div><input type="number" step="any" id="bmH" placeholder="in hours (e.g. 48)"></div></div>
+      <input type="text" id="bmS" placeholder="Source (work order / past record / PM decision)" style="margin-top:8px">
+      <button class="btn pri" type="button" id="bmGo" style="width:100%;margin-top:8px">Save approved benchmark</button><p class="note">Compared only with verified quantity ÷ reported hours in the same unit and basis. A new rate supersedes the old one.</p></div>
+      <div class="card"><h2>Benchmarks</h2>${g.benchmarks.filter(b=>b.status==='APPROVED').map(b=>`<div class="dkrow"><div class="t"><b>${esc(b.activity)}</b>${st(b.status)}</div><div class="s">${f(b.target_qty)} ${esc(b.unit)} in ${f(b.target_hours)} h (${esc(b.basis)}) = ${f(b.rate)} · ${esc(b.source||'')}</div></div>`).join('')||'<p class="note">No approved benchmark yet.</p>'}</div>`;
+    IN.querySelector('#bmGo').onclick=async e=>{ busy(e.target,true); const x=await call({action:'bench_set',activity_id:val('bmA'),denominator_basis:val('bmB'),target_qty:val('bmQ'),target_hours:val('bmH'),source:val('bmS')}); busy(e.target,false); toast(x.ok?'Approved '+x.benchmark_id:ERR(x.error)); if(x.ok) Alrt(); };
+  }
   async function Bill3(){
     const p=META.perms;
     B.innerHTML=`${seg('b3',[['val','Value'],['draft','Bill drafts'],['rates','Rates'],['slab','Slab milestones'],['area','Area register']].concat(p.admin?[['dec','Owner decisions']]:[]))}<div id="dkIn"><div class="card note">Loading…</div></div>`; wireSeg(Bill3);
