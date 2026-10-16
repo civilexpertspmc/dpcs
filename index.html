@@ -410,6 +410,7 @@ function entryHTML(e,i){
         <div class="full"><label class="f">Engagement basis</label>${selectHTML('basis',m.basis,`${P}.manpower.${j}.basis`,null,'Daily or contract…')}</div>
         <div><label class="f">Trade</label>${selectHTML('trades',m.trade,`${P}.manpower.${j}.trade`,null,'Trade…')}</div>
         <div><label class="f">Nos</label><input type="number" inputmode="numeric" min="0" step="1" placeholder="0" value="${esc(m.count)}" data-path="${P}.manpower.${j}.count"></div>
+        <div><label class="f">Hours / person</label><input type="number" inputmode="decimal" min="0" max="24" step="0.5" placeholder="Not known" value="${esc(m.hours||'')}" data-path="${P}.manpower.${j}.hours"></div>
       </div>
     </div>`).join('');
   const mpTotal=e.manpower.reduce((s,m)=>s+(num(m.count)||0),0);
@@ -442,6 +443,8 @@ function entryHTML(e,i){
                      : '<select disabled><option>Select activity first</option></select>'}</div>
         <div><label class="f">Qty of work achieved</label><input type="number" inputmode="decimal" min="0" step="any" placeholder="Leave blank if not measured" value="${esc(e.qty)}" data-path="${P}.qty"></div>
         <div><label class="f">Unit</label>${selectHTML('units',e.unit,`${P}.unit`,null,'Unit…')}</div>
+        <div class="full"><label class="f">Work status today</label><select data-path="${P}.wstatus"><option value="">—</option>${[['COMPLETED','Completed'],['CONTINUE','Continue tomorrow (auto-reschedule)'],['HOLD','On hold / hindrance']].map(o=>`<option value="${o[0]}"${e.wstatus===o[0]?' selected':''}>${o[1]}</option>`).join('')}</select>
+          ${e.wstatus==='CONTINUE'?'<div class="note">Tomorrow\'s task is created automatically for you; the PM confirms the quantity.</div>':''}</div>
       </div>
 
       <div class="sub">
@@ -728,9 +731,9 @@ function buildRecord(){
       qty_achieved:num(e.qty), unit:num(e.qty)!=null?e.unit:'', qty_status:num(e.qty)==null?'NOT REPORTED':'REPORTED',
       manpower:e.manpower.filter(m=>m.trade&&num(m.count)).map(m=>({
         team_type:m.agency==='In-house team'?'IN-HOUSE':'CONTRACTOR', contractor_or_team:m.agency,
-        engagement_basis:m.basis, trade:m.trade, headcount:+m.count})),
+        engagement_basis:m.basis, trade:m.trade, headcount:+m.count, hours:num(m.hours)})),
       machinery:e.machOn?e.machinery.map(m=>({machine_type:m.type,working_location:m.location,hours:num(m.hours)})):[],
-      remarks:e.remarks||'', photos:(e.photos||[]).map(p=>p.id), assignment_id:e.assignment_id||''
+      remarks:e.remarks||'', photos:(e.photos||[]).map(p=>p.id), assignment_id:e.assignment_id||'', work_status:e.wstatus||''
     })),
     tomorrow_plan:S.tomorrow.filter(t=>t.location&&t.activity).map((t,k)=>({plan_no:k+1,location:t.location,activity:t.activity,target_qty:num(t.qty),unit:num(t.qty)!=null?t.unit:''})),
     attention:S.attention.filter(a=>a.category&&a.text.trim()).map((a,k)=>({item_no:k+1,category:a.category,severity:a.severity,location:a.location||'',description:a.text.trim(),photos:(a.photos||[]).map(p=>p.id)})),
@@ -1084,6 +1087,7 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
       <button type="button" id="ctClose" style="background:#fff;color:#061A59;border:0;border-radius:8px;padding:8px 14px;font-weight:700">Close</button>
     </div>
     <div class="cttabs" style="display:flex;gap:4px;padding:0 10px">
+      <button type="button" data-tab="x" class="ctt">📈 Dashboard</button>
       <button type="button" data-tab="v" class="ctt on">✔ Verify <span id="ctPend" class="ctbadge"></span></button>
       <button type="button" data-tab="r" class="ctt">📄 Reports</button>
       <button type="button" data-tab="d" class="ctt">📊 Progress</button>
@@ -1091,7 +1095,7 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
     </div>
   </div>
   <div style="max-width:760px;margin:0 auto;padding:12px 16px 40px">
-    <div id="ctV"></div><div id="ctR" style="display:none"></div><div id="ctD" style="display:none"></div><div id="ctP" style="display:none"></div>
+    <div id="ctV"></div><div id="ctR" style="display:none"></div><div id="ctD" style="display:none"></div><div id="ctP" style="display:none"></div><div id="ctX" style="display:none"></div>
   </div>
 </div>
 <style>
@@ -1131,6 +1135,8 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
   };
   function show(t){ tab=t; scrim.querySelectorAll('.ctt').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
     V.style.display=t==='v'?'':'none'; R.style.display=t==='r'?'':'none'; D.style.display=t==='d'?'':'none'; P.style.display=t==='p'?'':'none';
+    const X=document.getElementById('ctX'); X.style.display=t==='x'?'':'none';
+    if(t==='x'){ if(!X.querySelector('iframe')) X.innerHTML='<iframe title="DPCS corporate dashboard" src="control/index.html" style="width:100%;height:calc(100vh - var(--navh,96px) - 120px);min-height:560px;border:1px solid #DCE3EC;border-radius:12px;background:#fff"></iframe>'; return; }
     if(t==='p') return pourReview(P); (t==='v'?loadV:t==='r'?loadR:loadD)(); }
   scrim.querySelectorAll('.ctt').forEach(b=>b.onclick=()=>show(b.dataset.tab));
   function open(){ scrim.style.display='block'; const a=auth(); document.getElementById('ctWho').textContent=(a?a.name+' · '+a.role:'')+' · Subhadra Towers';
@@ -1219,11 +1225,12 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
     D.innerHTML='<div class="card note">Loading…</div>';
     const j=await call({action:'control_dashboard',kind:'DPR'});
     if(!j.ok){ D.innerHTML='<div class="card note">'+esc(ERR(j.error))+'</div>'; return; }
-    const s=j.summary, gap=s.planned==null?null:s.verified-s.planned;
+    const s=j.summary, ok=!!s.coverage_approved, gap=!ok||s.planned==null?null:s.verified-s.planned;
     const bar=(v,c)=>`<i style="width:${Math.max(0,Math.min(100,v||0))}%;background:${c}"></i>`;
     D.innerHTML=`<div class="card"><h2>Progress as of ${esc(s.as_of)}</h2>
       ${s.estimate?'<div class="ctwarn">PLANNING ESTIMATE baseline — planned dates, weights and B/C blocks are thumb-rule assumptions until you confirm real data.</div>':''}
-      <div class="ctk"><div><b>${pc(s.verified)}</b><span>Verified progress</span></div><div><b>${pc(s.planned)}</b><span>Planned to date</span></div>
+      ${ok?'':`<div class="ctwarn">Overall progress is unavailable until the owner approves complete WBS coverage. Planning-estimate reference: verified ${pc(s.verified)} · planned ${pc(s.planned)}.</div>`}
+      <div class="ctk"><div><b>${ok?pc(s.verified):'Awaiting'}</b><span>Verified progress</span></div><div><b>${ok?pc(s.planned):'Awaiting'}</b><span>Planned to date</span></div>
         <div><b style="color:${gap!=null&&gap<0?'#B7443E':'#2E7D4F'}">${gap==null?'—':(gap>=0?'+':'')+n(gap,1)+' pp'}</b><span>Schedule gap</span></div>
         <div><b>${s.pending}</b><span>Entries to verify</span></div></div>
       <p class="note" style="margin:8px 0 0">${s.lines} WBS lines · weighted by BOQ qty × rate · site-reported ${pc(s.reported)} (not counted)</p></div>
@@ -1523,7 +1530,8 @@ window.dpcsPhoto={
     const done=()=>{ document.body.classList.remove('qcprinting'); window.removeEventListener('afterprint',done); }; window.addEventListener('afterprint',done); setTimeout(()=>window.print(),60); }
   function stage2(id,rev,review){
     const c=findC(id,rev), items=(T.templates[c.kind]||[]).filter(t=>t.stage!=='PRE'), box=B.querySelector(`[data-stage2="${CSS.escape(id)}"]`);
-    const S2={checks:{},qty:'',at:new Date(Date.now()+330*60000).toISOString().slice(0,16),remarks:''};
+    const S2={checks:{},qty:'',at:new Date(Date.now()+330*60000).toISOString().slice(0,16),remarks:'',mode:'',recipe:'',batch:''};
+    if(!window.__recipes) call({action:'recipe_list'}).then(r=>{ window.__recipes=r.ok?r.recipes:[]; if(box.innerHTML) draw2(); });
     const draw2=()=>{ let sec='', h=`<div class="qc-sheet" style="margin-top:10px"><div class="qc-h"><span>Record the pour · ${esc(c.card_id)}</span><span>Y · N · N/A</span></div>`;
       items.forEach(t=>{ const k=S2.checks[t.no]||{}, a=k.answer||''; if(t.section!==sec){ sec=t.section; h+=`<div class="qc-sec">${t.stage==='DURING'?'2. ':'3. '}${esc(sec)}</div>`; }
         h+=`<div class="qc-row${a==='NO'?' bad':a==='NA'?' na':''}"><span class="no">${t.no}</span><span class="t">${esc(t.text)}</span>
@@ -1532,16 +1540,20 @@ window.dpcsPhoto={
           ${a==='NO'||(k.photos||[]).length?`<div class="phrow">${(k.photos||[]).map(p=>`<span class="ph"><img src="${p.thumb}" alt="Photo"></span>`).join('')}<button class="add-row ph-add" type="button" data-p2="${t.no}">📷 Photo</button></div>`:''}</div></div>`; });
       h+=`<div class="qc-fields"><div><label class="f">Actual quantity poured (m³) <span class="star">*</span></label><input type="number" inputmode="decimal" min="0" step="any" id="s2q" value="${esc(S2.qty)}" placeholder="Planned ${esc(c.proposed_volume_m3)}"></div>
         <div><label class="f">Pour completed at <span class="star">*</span></label><input type="datetime-local" id="s2t" value="${esc(S2.at)}"></div>
+        <div><label class="f">Concrete mode <span class="star">*</span></label><select id="s2m"><option value="">Select…</option><option value="RMC"${S2.mode==='RMC'?' selected':''}>RMC (ready-mix)</option><option value="SITE_MIX"${S2.mode==='SITE_MIX'?' selected':''}>Site mix</option></select></div>
+        ${S2.mode==='SITE_MIX'?`<div><label class="f">Mix recipe <span class="star">*</span></label><select id="s2c"><option value="">Select…</option>${(window.__recipes||[]).filter(x=>x.grade===c.grade).map(x=>`<option value="${esc(x.recipe_id)}"${S2.recipe===x.recipe_id?' selected':''}>${esc(x.recipe_id)} · ${esc(x.approval_status)}</option>`).join('')}</select></div>`:''}
+        <div style="grid-column:1/-1"><label class="f">${S2.mode==='RMC'?'RMC delivery ticket nos.':'Batch / delivery refs'}</label><input type="text" id="s2b" value="${esc(S2.batch)}"></div>
         <div style="grid-column:1/-1"><label class="f">Defects / interruptions (optional)</label><input type="text" id="s2r" value="${esc(S2.remarks)}"></div></div>
         <div class="qc-act"><button class="btn pri" type="button" id="s2go">Submit pour record to QA</button><button class="btn" type="button" id="s2x">Cancel</button></div></div>`;
       box.innerHTML=h;
       box.querySelectorAll('[data-n2]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); const k=S2.checks[b.dataset.n2]||(S2.checks[b.dataset.n2]={note:'',photos:[]}); k.answer=b.dataset.a; draw2(); });
       box.querySelectorAll('[data-c2]').forEach(el=>{ el.onclick=e=>e.stopPropagation(); el.oninput=()=>{ (S2.checks[el.dataset.c2]||(S2.checks[el.dataset.c2]={answer:'',photos:[]})).note=el.value; }; });
       box.querySelectorAll('[data-p2]').forEach(b=>b.onclick=async e=>{ e.stopPropagation(); const p=await dpcsPhoto.take('POUR_CARD','pour '+b.dataset.p2); if(p){ (S2.checks[b.dataset.p2]=S2.checks[b.dataset.p2]||{answer:'',note:'',photos:[]}).photos.push(p); draw2(); } });
-      ['s2q','s2t','s2r'].forEach(i=>{ const el=document.getElementById(i); el.onclick=e=>e.stopPropagation(); el.oninput=()=>{ S2[{s2q:'qty',s2t:'at',s2r:'remarks'}[i]]=el.value; }; });
+      ['s2q','s2t','s2r','s2b'].forEach(i=>{ const el=document.getElementById(i); el.onclick=e=>e.stopPropagation(); el.oninput=()=>{ S2[{s2q:'qty',s2t:'at',s2r:'remarks',s2b:'batch'}[i]]=el.value; }; });
+      ['s2m','s2c'].forEach(i=>{ const el=document.getElementById(i); if(!el) return; el.onclick=e=>e.stopPropagation(); el.onchange=()=>{ S2[i==='s2m'?'mode':'recipe']=el.value; if(i==='s2m') draw2(); }; });
       document.getElementById('s2x').onclick=e=>{ e.stopPropagation(); box.innerHTML=''; };
       document.getElementById('s2go').onclick=async e=>{ e.stopPropagation(); const b=e.target; b.disabled=true;
-        const x=await call({action:'pour_complete',card_id:id,revision:+rev,actual_qty_m3:S2.qty,completed_at:S2.at,remarks:S2.remarks,
+        const x=await call({action:'pour_complete',card_id:id,revision:+rev,actual_qty_m3:S2.qty,completed_at:S2.at,remarks:S2.remarks,concrete_mode:S2.mode,recipe_id:S2.recipe,batch_refs:S2.batch,
           checks:items.map(t=>{ const k=S2.checks[t.no]||{}; return {no:t.no,answer:k.answer||'',note:k.note||'',photos:(k.photos||[]).map(p=>p.id)}; })});
         if(x.ok){ toast('Pour recorded · '+x.actual_qty_m3+' m³ ('+(x.variance_m3>=0?'+':'')+x.variance_m3+' vs planned)'); openId=''; await refresh(); tabs(); drawList(review); } else { b.disabled=false; toast(ERR(x.error)); } }; };
     draw2(); box.scrollIntoView({behavior:'smooth',block:'start'});
@@ -1555,41 +1567,39 @@ window.dpcsPhoto={
 
 <div id="taskScrim" class="pg" style="position:fixed;inset:0;z-index:150;background:#F5F7FB;display:none;overflow:auto">
   <div class="pghead">
-    <div class="pgrow"><div style="flex:1;min-width:0"><b>Tasks &amp; delegation</b><div class="pgsub" id="tkWho">Assigned work · acknowledge · report against it · scorecard</div></div></div>
+    <div class="pgrow"><div style="flex:1;min-width:0"><b>Tasks &amp; delegation</b><div class="pgsub" id="tkWho">Tomorrow plan · acknowledge · report against it · PM verifies · carry forward · report card</div></div></div>
     <div class="pgtabs" id="tkTabs"></div>
   </div>
   <div class="pgbody"><div id="tkBody"></div></div>
 </div>
 <style>
 .tk{border:1px solid #DCE3EC;border-radius:12px;background:#fff;padding:12px;margin-bottom:10px;border-left:4px solid #052585}
-.tk.hi{border-left-color:#B7443E}.tk.lo{border-left-color:#9DAED2}.tk.done{opacity:.78;border-left-color:#2E7D4F}
+.tk.hi{border-left-color:#B7443E}.tk.lo{border-left-color:#9DAED2}.tk.done{opacity:.8;border-left-color:#2E7D4F}.tk.cr{border-left-color:#B87920}
 .tk .h{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}.tk .h b{font-size:15px;color:#061A59}
 .tk .s{font-size:12.5px;color:#5B6B7C;margin-top:3px}.tk .i{font-size:13.5px;margin-top:6px;color:#182634}
 .tk .bar{height:8px;background:#E6EBF3;border-radius:4px;overflow:hidden;margin-top:8px;position:relative}.tk .bar i{position:absolute;left:0;top:0;bottom:0;background:#9DAED2}.tk .bar i.v{background:#2E7D4F}
-.tk .q{display:flex;justify-content:space-between;font-size:12px;color:#5B6B7C;margin-top:4px}
+.tk .q{display:flex;justify-content:space-between;font-size:12px;color:#5B6B7C;margin-top:4px;gap:8px;flex-wrap:wrap}
 .tk .a{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.tk .a .btn{flex:1 1 auto;min-height:40px;font-size:13px}.tk .a input{flex:1 1 100%;min-height:40px}
 .tkst{font-size:10.5px;font-weight:800;border-radius:10px;padding:3px 8px;white-space:nowrap}
-.tkst.as{background:#FFF6D6;color:#9A6A00}.tkst.ak{background:#EEF2FB;color:#052585}.tkst.rp{background:#E3F1FA;color:#0F5E86}.tkst.vc{background:#E7F3EC;color:#2E7D4F}.tkst.dn{background:#E7F3EC;color:#2E7D4F}.tkst.cx{background:#EEF1F6;color:#5B6B7C}.tkst.od{background:#FBEAEA;color:#B7443E}
+.tkst.as{background:#FFF6D6;color:#9A6A00}.tkst.ak{background:#EEF2FB;color:#052585}.tkst.rp{background:#E3F1FA;color:#0F5E86}.tkst.vc{background:#E7F3EC;color:#2E7D4F}.tkst.dn{background:#E7F3EC;color:#2E7D4F}.tkst.cx{background:#EEF1F6;color:#5B6B7C}.tkst.od{background:#FBEAEA;color:#B7443E}.tkst.cr{background:#FFF1DE;color:#9A5A00}
 .tkchips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.tkchips button{border:1.5px solid #D5DEF2;background:#fff;border-radius:16px;padding:6px 12px;font-size:12.5px;font-weight:700;color:#061A59}.tkchips button.on{background:#052585;border-color:#052585;color:#fff}
 .tkseg{display:flex;gap:6px}.tkseg button{flex:1;min-height:42px;border:1.5px solid #D5DEF2;background:#fff;border-radius:10px;font-weight:800;color:#061A59}.tkseg button.on{background:#052585;border-color:#052585;color:#fff}
 .tkhint{font-size:12.5px;border-radius:8px;padding:8px 10px;margin-top:6px;background:#EEF2FB;color:#052585}.tkhint.w{background:#FFF5E6;color:#9A6A00}
 .tkduty{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.tkduty button{border:1px dashed #052585;background:#F4F8FD;color:#052585;border-radius:8px;padding:6px 9px;font-size:12px;text-align:left}
-.sc{display:grid;grid-template-columns:52px 1fr;gap:10px;align-items:center;padding:10px 0;border-top:1px solid #EEF1F6}.sc:first-child{border-top:0}
-.sc .g{width:52px;height:52px;border-radius:12px;display:grid;place-items:center;font-weight:900;font-size:22px;color:#fff;background:#9DAED2}
-.sc .g.A{background:#2E7D4F}.sc .g.B{background:#052585}.sc .g.C{background:#B87920}.sc .g.D{background:#B7443E}
-.sc .g small{display:block;font-size:10px;font-weight:700;margin-top:-6px}
-.sc b{color:#061A59}.sc .s{font-size:12px;color:#5B6B7C}
-.scp{display:grid;grid-template-columns:1fr 54px;gap:2px 8px;font-size:11.5px;margin-top:6px;color:#182634}.scp .bb{height:6px;background:#E6EBF3;border-radius:3px;overflow:hidden;margin-top:5px}.scp .bb i{display:block;height:100%;background:#052585}
-.scp .r{text-align:right;color:#5B6B7C}
+.rc{border-top:1px solid #EEF1F6;padding:10px 0}.rc:first-child{border-top:0}.rc b{color:#061A59}.rc .s{font-size:12px;color:#5B6B7C}
+.rcu{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.rcu span{background:#F4F8FD;border:1px solid #D5DEF2;border-radius:8px;padding:4px 8px;font-size:12px}
+.mpl{border-top:1px solid #EEF1F6;padding:9px 0;display:flex;gap:8px;align-items:flex-start}.mpl:first-child{border-top:0}.mpl .m{flex:1;min-width:0}.mpl small{display:block;color:#5B6B7C;font-size:12px}
 </style>
 <script>
 (function(){
   const scrim=document.getElementById('taskScrim'), B=document.getElementById('tkBody'), TB=document.getElementById('tkTabs');
-  let M=null, L=null, SC=null, tab='mine', filt='open', F=null;
+  let M=null, L=null, tab='mine', filt='open', F=null, PD=null;
   const call=b=>{ const a=auth(); return a?callApi(Object.assign({token:a.token},b)):Promise.resolve({ok:false,error:'SIGNIN_REQUIRED'}); };
-  const ERR=e=>({UNKNOWN_ACTION:'The server is not updated yet (DPCS v14 needed).',OFFLINE:'No internet.'}[e]||e);
+  const ERR=e=>({UNKNOWN_ACTION:'The server is not updated yet (DPCS v15 needed).',OFFLINE:'No internet.'}[e]||e);
   const nm=s=>String(s||'').split(' (')[0];
   const today=()=>new Date(Date.now()+330*60000).toISOString().slice(0,10);
+  const tomorrow=()=>new Date(Date.now()+330*60000+86400000).toISOString().slice(0,10);
+  const cid=p=>p+'-'+Date.now()+'-'+Math.random().toString(36).slice(2,7);
   window.taskBtn=function(){
     const a=auth(), row=document.querySelector('.top .row'); let t=document.getElementById('btnTasks');
     if(!a||!row){ if(t) t.remove(); return; }
@@ -1597,79 +1607,103 @@ window.dpcsPhoto={
       row.appendChild(t); t.onclick=()=>open(); }
     badge();
   };
-  async function badge(){ const r=await call({action:'task_list'}); if(!r.ok) return; L=r; const n=r.mine.filter(a=>a.status==='ASSIGNED').length, el=document.getElementById('tkBadge'); if(el) el.textContent=n||''; }
-  const blankF=()=>({kind:'WORK',assignee_id:'',location:'',floor:'',activity:'',target_qty:'',unit:'',task_date:today(),due_date:today(),priority:'Normal',instruction:''});
+  async function badge(){ const r=await call({action:'task_list'}); if(!r.ok) return; L=r; const n=r.mine.filter(a=>a.status==='ASSIGNED'||a.status==='CARRIED').length, el=document.getElementById('tkBadge'); if(el) el.textContent=n||''; }
+  const blankF=()=>({kind:'WORK',assignee_id:'',location:'',floor:'',activity:'',target_qty:'',unit:'',task_date:tomorrow(),due_date:tomorrow(),priority:'Normal',instruction:'',source:'PM_EVENING'});
   async function open(t){ scrim.style.display='block'; if(t) tab=t; B.innerHTML='<div class="card note">Loading tasks…</div>';
     const r=await call({action:'task_list'}); if(!r.ok){ B.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; TB.innerHTML=''; return; } L=r;
     if(r.can_assign&&!M){ const m=await call({action:'task_meta'}); if(m.ok) M=m; }
     if(!F) F=blankF(); tabs(); draw(); }
   window.taskOpen=open;
   function tabs(){
-    const pm=L&&L.can_assign, c=L&&L.counts||{};
-    const tt=[['mine','My tasks'+(L.mine.filter(a=>a.open).length?' <span class="ctbadge">'+L.mine.filter(a=>a.open).length+'</span>':'')]]
-      .concat(pm?[['assign','＋ Assign'],['team','Team tasks'+(c.overdue?' <span class="ctbadge">'+c.overdue+'</span>':'')]]:[]).concat([['score',pm?'Scorecard':'My score']]);
+    const pm=L&&L.can_assign, c=L&&L.counts||{}, mo=L.mine.filter(a=>a.open).length;
+    const tt=[['mine','My tasks'+(mo?' <span class="ctbadge">'+mo+'</span>':'')]].concat(pm?[['plan','Plan tomorrow'+((c.carried||0)+(c.draft||0)?' <span class="ctbadge">'+((c.carried||0)+(c.draft||0))+'</span>':'')],['assign','＋ Assign'],['team','Team tasks'+(c.overdue?' <span class="ctbadge">'+c.overdue+'</span>':'')]]:[]).concat([['card','Report card']]);
     TB.innerHTML=tt.map(x=>`<button type="button" class="pgt${tab===x[0]?' on':''}" data-t="${x[0]}">${x[1]}</button>`).join('');
     TB.querySelectorAll('[data-t]').forEach(b=>b.onclick=async()=>{ tab=b.dataset.t; if(tab!=='assign'){ B.innerHTML='<div class="card note">Loading…</div>'; const r=await call({action:'task_list'}); if(r.ok) L=r; } tabs(); draw(); scrim.scrollTo({top:0}); });
   }
-  function draw(){ if(tab==='mine') drawMine(); else if(tab==='assign') drawAssign(); else if(tab==='team') drawTeam(); else drawScore(); }
+  function draw(){ ({mine:drawMine,plan:drawPlan,assign:drawAssign,team:drawTeam,card:drawCard})[tab](); }
   function st(a){ if(a.overdue&&a.open) return '<span class="tkst od">OVERDUE</span>';
-    return {ASSIGNED:'<span class="tkst as">NEW – ACKNOWLEDGE</span>',ACKNOWLEDGED:'<span class="tkst ak">ACKNOWLEDGED</span>',REPORTED:'<span class="tkst rp">REPORTED – PM TO VERIFY</span>',
-      'VERIFIED – CLOSE':'<span class="tkst vc">VERIFIED – MARK DONE</span>',DONE:'<span class="tkst dn">DONE</span>','PARTLY DONE':'<span class="tkst cx">CLOSED SHORT</span>',CANCELLED:'<span class="tkst cx">CANCELLED</span>'}[a.display]||'<span class="tkst ak">'+esc(a.display)+'</span>'; }
+    const m={DRAFT:['cx','DRAFT – PLAN NOT RELEASED'],ASSIGNED:['as','NEW – ACKNOWLEDGE'],ACKNOWLEDGED:['ak','ACKNOWLEDGED'],'IN PROGRESS':['rp','IN PROGRESS'],'SUBMITTED – PM TO VERIFY':['rp','SUBMITTED – PM TO VERIFY'],
+      'VERIFIED – CLOSE':['vc','VERIFIED – PM TO CLOSE'],'CARRIED – PM TO CONFIRM':['cr','CARRIED – PM TO CONFIRM'],VERIFIED:['dn','VERIFIED ✓'],CLOSED_SHORT:['cx','CLOSED SHORT'],CARRIED_FORWARD:['cr','CARRIED FORWARD'],CANCELLED:['cx','CANCELLED']}[a.display]||['ak',a.display];
+    return '<span class="tkst '+m[0]+'">'+esc(m[1])+'</span>'; }
+  const srcLab=s=>({STAFF_CONTINUE:'from staff CONTINUE',MASTER_PLAN:'from master plan',PM_EVENING:'PM evening plan',PM_CARRY:'PM carry-forward'})[s]||s||'';
   function card(a,team){
-    const work=a.kind==='WORK', pct=work&&a.target_qty?Math.min(100,a.reported_qty/a.target_qty*100):0, vp=work&&a.target_qty?Math.min(100,a.verified_qty/a.target_qty*100):0;
-    const cls=a.open?(a.priority==='High'?' hi':a.priority==='Low'?' lo':''):' done';
-    let act='';
+    const work=a.kind==='WORK', tg=a.effective_target, pct=work&&tg?Math.min(100,a.reported_qty/tg*100):0, vp=work&&tg?Math.min(100,a.verified_qty/tg*100):0;
+    const cls=a.status==='CARRIED'?' cr':a.open?(a.priority==='High'?' hi':a.priority==='Low'?' lo':''):' done';
+    let act=''; const id=esc(a.assignment_id);
     if(!team&&a.open){
-      if(a.status==='ASSIGNED') act+=`<button class="btn pri" type="button" data-ack="${esc(a.assignment_id)}">✔ Acknowledge</button>`;
-      if(work) act+=`<button class="btn${a.status==='ASSIGNED'?'':' pri'}" type="button" data-rep="${esc(a.assignment_id)}">📝 Report progress</button>`;
-      if(!work||a.display==='VERIFIED – CLOSE') act+=(!work?`<input type="text" placeholder="What was done (required)" data-dn="${esc(a.assignment_id)}">`:'')+`<button class="btn grn" type="button" data-done="${esc(a.assignment_id)}">Mark done</button>`;
+      if(a.status==='ASSIGNED'||a.status==='CARRIED'&&!a.ack_at) act+=`<button class="btn pri" type="button" data-ack="${id}">✔ Acknowledge</button>`;
+      if(work) act+=`<button class="btn${a.status==='ASSIGNED'?'':' pri'}" type="button" data-rep="${id}">📝 Report progress</button>`;
+      if(a.status!=='SUBMITTED'&&(!work||a.entries)) act+=(!work?`<input type="text" placeholder="What was done (required)" data-dn="${id}">`:'')+`<button class="btn grn" type="button" data-done="${id}">${work?'Work complete – ask PM to verify':'Mark done'}</button>`;
     }
-    if(team&&a.open){ act+=`<input type="text" placeholder="Note (required to close short / cancel)" data-dn="${esc(a.assignment_id)}">`;
-      act+=work?`<button class="btn${a.display==='VERIFIED – CLOSE'?' grn':''}" type="button" data-done="${esc(a.assignment_id)}">${a.display==='VERIFIED – CLOSE'?'Close – done':'Close short'}</button>`:`<button class="btn" type="button" data-done="${esc(a.assignment_id)}">Mark done</button>`;
-      act+=`<button class="btn red" type="button" data-cx="${esc(a.assignment_id)}">Cancel</button>`; }
+    if(team&&(a.active)){ act+=`<input type="text" placeholder="Note / reason" data-dn="${id}">`;
+      if(a.status==='CARRIED'||a.status==='DRAFT') act+=`<input type="number" inputmode="decimal" placeholder="Confirmed target ${esc(a.unit||'')}${a.provisional_qty!=null?' (provisional '+a.provisional_qty+')':''}" data-cq="${id}"><button class="btn pri" type="button" data-conf="${id}" data-v="${a.version}">Confirm &amp; release</button>`;
+      else if(work) act+=`<button class="btn${a.display==='VERIFIED – CLOSE'?' grn':''}" type="button" data-close="${id}" data-v="${a.version}">${a.display==='VERIFIED – CLOSE'?'Close – verified':'Close short'}</button>${a.display!=='VERIFIED – CLOSE'?`<button class="btn" type="button" data-carry="${id}" data-v="${a.version}">Carry remaining</button>`:''}`;
+      else act+=`<button class="btn grn" type="button" data-close="${id}" data-v="${a.version}">Confirm duty done</button>`;
+      act+=`<button class="btn red" type="button" data-cx="${id}">Cancel</button>`; }
     return `<div class="tk${cls}"><div class="h"><div><b>${work?esc(a.activity):'Duty'}${a.priority==='High'?' <span style="color:#B7443E">●</span>':''}</b>
-      <div class="s">${a.block?'<span class="ctblk">'+esc(a.block)+'</span>':''}${esc(a.location||'Site')}${a.floor?' · '+esc(a.floor):''} · due <b>${esc(a.due_date)}</b>${team?' · <b>'+esc(a.assignee_name)+'</b> ('+esc(a.assignee_role)+')':' · from '+esc(nm(a.assigned_by))}</div></div>${st(a)}</div>
+      <div class="s">${a.block?'<span class="ctblk">'+esc(a.block)+'</span>':''}${esc(a.location||'Site')}${a.floor?' · '+esc(a.floor):''} · ${esc(a.task_date)}${a.due_date!==a.task_date?' → due '+esc(a.due_date):''}${team?' · <b>'+esc(a.assignee_name)+'</b> ('+esc(a.assignee_role)+')':' · '+esc(nm(a.assigned_by))} · <i>${esc(srcLab(a.source))}</i></div></div>${st(a)}</div>
       ${a.instruction?`<div class="i">${esc(a.instruction)}</div>`:''}
-      ${work?`<div class="bar"><i style="width:${pct}%"></i><i class="v" style="width:${vp}%"></i></div><div class="q"><span>Target <b>${esc(a.target_qty)} ${esc(a.unit)}</b></span><span>Reported ${esc(a.reported_qty)} · <b style="color:#2E7D4F">Verified ${esc(a.verified_qty)}</b>${a.returned?' · '+a.returned+' returned':''}</span></div>
-        <div class="s">${esc(a.assignment_id)} · WBS ${esc(a.wbs_id||'—')}${a.balance_at_assign!=null?' · balance at assign '+esc(a.balance_at_assign):''}${a.last_report?' · last report '+esc(a.last_report):''}</div>`:`<div class="s">${esc(a.assignment_id)}</div>`}
+      ${work?`<div class="bar"><i style="width:${pct}%"></i><i class="v" style="width:${vp}%"></i></div><div class="q"><span>Target <b>${tg==null?'PM to confirm':esc(tg)+' '+esc(a.unit)}</b>${a.target_qty==null&&a.provisional_qty!=null?' (provisional)':''}</span><span>Reported ${esc(a.reported_qty)} · pending ${esc(a.pending_qty)} · <b style="color:#2E7D4F">Verified ${esc(a.verified_qty)}</b>${a.returned?' · '+a.returned+' returned':''}</span></div>
+        <div class="s">${esc(a.assignment_id)} · WBS ${esc(a.wbs_id||'—')}${a.balance_at_assign!=null?' · available at assign '+esc(a.balance_at_assign):''}${a.parent_assignment_id?' · continues '+esc(a.parent_assignment_id):''}${a.last_report?' · last report '+esc(a.last_report):''}</div>`:`<div class="s">${esc(a.assignment_id)}</div>`}
       ${a.done_note?`<div class="s">📌 ${esc(nm(a.done_by))}: ${esc(a.done_note)}</div>`:''}
       ${act?`<div class="a">${act}</div>`:''}</div>`;
   }
-  function bindCards(team){
-    B.querySelectorAll('[data-ack]').forEach(b=>b.onclick=async()=>{ b.disabled=true; const r=await call({action:'task_ack',assignment_id:b.dataset.ack}); toast(r.ok?'Acknowledged':ERR(r.error)); await reload(); });
+  function bindCards(){
+    const note=id=>{ const n=B.querySelector(`[data-dn="${CSS.escape(id)}"]`); return n?n.value.trim():''; };
+    const run=async(b,body,okMsg)=>{ b.disabled=true; const r=await call(Object.assign({command_id:cid(body.action)},body)); toast(r.ok?okMsg(r):ERR(r.error)); if(!r.ok) b.disabled=false; else await reload(); };
+    B.querySelectorAll('[data-ack]').forEach(b=>b.onclick=()=>run(b,{action:'task_ack',assignment_id:b.dataset.ack},()=>'Acknowledged'));
     B.querySelectorAll('[data-rep]').forEach(b=>b.onclick=()=>{ const a=L.mine.find(x=>x.assignment_id===b.dataset.rep); reportFor(a); });
-    B.querySelectorAll('[data-done]').forEach(b=>b.onclick=async()=>{ const n=B.querySelector(`[data-dn="${CSS.escape(b.dataset.done)}"]`); b.disabled=true;
-      const r=await call({action:'task_done',assignment_id:b.dataset.done,note:n?n.value.trim():''}); toast(r.ok?('Task '+r.status.toLowerCase()):ERR(r.error)); if(!r.ok) b.disabled=false; else await reload(); });
-    B.querySelectorAll('[data-cx]').forEach(b=>b.onclick=async()=>{ const n=B.querySelector(`[data-dn="${CSS.escape(b.dataset.cx)}"]`); if(!n||!n.value.trim()){ toast('Write the reason'); return; } b.disabled=true;
-      const r=await call({action:'task_cancel',assignment_id:b.dataset.cx,note:n.value.trim()}); toast(r.ok?'Cancelled':ERR(r.error)); if(!r.ok) b.disabled=false; else await reload(); });
+    B.querySelectorAll('[data-done]').forEach(b=>b.onclick=()=>run(b,{action:'task_done',assignment_id:b.dataset.done,note:note(b.dataset.done)},r=>'Task '+String(r.status).toLowerCase()));
+    B.querySelectorAll('[data-conf]').forEach(b=>b.onclick=()=>{ const id=b.dataset.conf, q=B.querySelector(`[data-cq="${CSS.escape(id)}"]`); run(b,{action:'task_confirm',assignment_id:id,target_qty:q?q.value:'',expected_version:+b.dataset.v},()=>'Confirmed & released'); });
+    B.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>run(b,{action:'task_close',assignment_id:b.dataset.close,note:note(b.dataset.close),expected_version:+b.dataset.v},r=>'Closed · '+r.status));
+    B.querySelectorAll('[data-carry]').forEach(b=>b.onclick=()=>run(b,{action:'task_close',decision:'CARRY',assignment_id:b.dataset.carry,note:note(b.dataset.carry)||'carried by PM',expected_version:+b.dataset.v},r=>'Carried '+r.carry_qty+' to '+r.carry_id));
+    B.querySelectorAll('[data-cx]').forEach(b=>b.onclick=()=>{ if(!note(b.dataset.cx)) return toast('Write the reason'); run(b,{action:'task_cancel',assignment_id:b.dataset.cx,note:note(b.dataset.cx)},()=>'Cancelled'); });
   }
-  async function reload(){ const r=await call({action:'task_list'}); if(r.ok) L=r; tabs(); draw(); badge(); }
-  /** Pre-fills an activity in today's daily report linked to this task (assignment_id is sent with the report). */
+  async function reload(){ const r=await call({action:'task_list'}); if(r.ok) L=r; if(tab==='plan') PD=null; tabs(); draw(); badge(); }
+  /** Adds (or reopens) the task's entry in today's daily report: linked by assignment_id; staff choose COMPLETED / CONTINUE there. */
   function reportFor(a){
     if(typeof S==='undefined'){ toast('Open the report form first'); return; }
     let e=S.entries.find(x=>x.assignment_id===a.assignment_id);
     if(!e){ const blankFirst=S.entries.length===1&&!S.entries[0].activity&&!S.entries[0].location; e=blankFirst?S.entries[0]:blankEntry(); if(!blankFirst) S.entries.push(e);
-      Object.assign(e,{activity:a.activity,location:a.location,floor:a.floor||e.floor,unit:a.unit,assignment_id:a.assignment_id,desc:e.desc||a.instruction||''}); }
+      Object.assign(e,{activity:a.activity,location:a.location,floor:a.floor||e.floor,unit:a.unit,assignment_id:a.assignment_id,desc:e.desc||a.instruction||'',wstatus:''}); }
     S.entries.forEach(x=>x._c=x!==e); renderEntries(); autosave();
     scrim.style.display='none'; const i=S.entries.indexOf(e); setTimeout(()=>scrollToAct(i),80);
-    toast('Enter today\'s quantity for '+a.activity+' — it is linked to your task');
+    toast('Enter today\'s quantity and choose Completed / Continue tomorrow');
   }
   function drawMine(){
     const open=L.mine.filter(a=>a.open), closed=L.mine.filter(a=>!a.open);
-    B.innerHTML=`<div class="card"><h2>Open (${open.length})</h2>${open.length?open.map(a=>card(a,false)).join(''):'<p class="note">No open tasks. Your Project Manager assigns work here.</p>'}
-      <p class="note">Acknowledge each new task. “Report progress” adds it to today’s report; the task closes when the PM-verified quantity reaches the target.</p></div>
-      ${closed.length?`<div class="card"><h2>Completed / closed (${closed.length})</h2>${closed.slice(0,20).map(a=>card(a,false)).join('')}</div>`:''}`;
-    bindCards(false);
+    B.innerHTML=`<div class="card"><h2>Open (${open.length})</h2>${open.length?open.map(a=>card(a,false)).join(''):'<p class="note">No open tasks. Your Project Manager releases tomorrow\'s plan here.</p>'}
+      <p class="note">Acknowledge each task. “Report progress” adds it to today’s report; choose <b>Continue tomorrow</b> there and the task is rescheduled automatically. Only PM-verified quantity counts.</p></div>
+      ${closed.length?`<div class="card"><h2>Closed (${closed.length})</h2>${closed.slice(0,20).map(a=>card(a,false)).join('')}</div>`:''}`;
+    bindCards();
+  }
+  async function drawPlan(){
+    if(!PD){ B.innerHTML='<div class="card note">Preparing tomorrow\'s plan…</div>'; const r=await call({action:'plan_candidates',date:F.task_date||tomorrow()}); if(!r.ok){ B.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return; } PD=r; }
+    const d=PD;
+    B.innerHTML=`<div class="card"><h2>Tomorrow · ${esc(d.date)}</h2><div class="ctk"><div><b>${d.carried.length}</b><span>Carried by staff</span></div><div><b>${d.drafts.length}</b><span>Draft (not released)</span></div><div><b>${d.released.length}</b><span>Released</span></div><div><b>${d.master_plan.length}</b><span>Master-plan lines due</span></div></div>
+      <p class="note" style="margin-top:8px">${esc(d.note)}</p>
+      ${d.drafts.length?`<button class="btn pri" type="button" id="plGo" style="width:100%;margin-top:6px">Approve &amp; release ${d.drafts.length} draft task(s)</button>`:''}</div>
+      ${d.carried.length?`<div class="card"><h2>1 · Staff CONTINUE – confirm quantity (${d.carried.length})</h2>${d.carried.map(a=>card(a,true)).join('')}</div>`:''}
+      ${d.drafts.length?`<div class="card"><h2>2 · Drafts from the evening meeting (${d.drafts.length})</h2>${d.drafts.map(a=>card(a,true)).join('')}</div>`:''}
+      <div class="card"><h2>3 · Master plan due / overdue</h2>${d.master_plan.length?d.master_plan.slice(0,60).map(w=>`<div class="mpl"><span class="ctblk">${esc(w.block)}</span><div class="m"><b>${esc(w.activity)}</b>
+        <small>${esc(w.wbs_id)} · plan ${esc(w.planned_start)} → ${esc(w.planned_finish)}${w.overdue?' · <b style="color:#B7443E">overdue</b>':''} · BOQ ${esc(w.boq)} − verified ${esc(w.verified)} − reserved ${esc(w.reserved)} = <b>available ${esc(w.available)} ${esc(w.unit)}</b> · ${esc(w.basis)}</small>
+        ${w.tasks.length?`<small>Tasks: ${w.tasks.map(t=>esc(t.staff)+' '+esc(t.status)+(t.qty!=null?' '+t.qty:'')).join(', ')}</small>`:''}</div>
+        ${w.available>0?`<button class="btn" type="button" data-mp="${esc(w.wbs_id)}" style="flex:none;min-height:36px;font-size:12px">Assign</button>`:''}</div>`).join(''):'<p class="note">No master-plan line is due for this date.</p>'}</div>
+      ${d.released.length?`<div class="card"><h2>Already released (${d.released.length})</h2>${d.released.map(a=>card(a,true)).join('')}</div>`:''}`;
+    const go=document.getElementById('plGo'); if(go) go.onclick=async()=>{ go.disabled=true; const r=await call({action:'plan_approve',date:d.date_iso,command_id:cid('plan')}); toast(r.ok?'Released '+r.released+' task(s)':ERR(r.error)); go.disabled=false; if(r.ok){ PD=null; await reload(); } };
+    B.querySelectorAll('[data-mp]').forEach(b=>b.onclick=()=>{ const w=d.master_plan.find(x=>x.wbs_id===b.dataset.mp); const L1=M.locations.find(l=>l.wf===w.workfront_id&&l.type==='RAFT')||M.locations.find(l=>l.wf===w.workfront_id);
+      F=Object.assign(blankF(),{location:L1?L1.name:'',activity:w.activity,unit:w.unit,task_date:d.date_iso,due_date:d.date_iso,source:'MASTER_PLAN'}); tab='assign'; tabs(); drawAssign(); });
+    bindCards();
   }
   function drawTeam(){
-    const c=L.counts||{}, f={open:a=>a.open,overdue:a=>a.overdue,ack:a=>a.status==='ASSIGNED',close:a=>a.display==='VERIFIED – CLOSE',all:()=>true}[filt];
+    const c=L.counts||{}, f={open:a=>a.open,draft:a=>a.status==='DRAFT',overdue:a=>a.overdue,ack:a=>a.status==='ASSIGNED',close:a=>a.display==='VERIFIED – CLOSE',carried:a=>a.status==='CARRIED',all:()=>true}[filt];
     const list=L.team.filter(f);
     B.innerHTML=`<div class="card"><div class="ctk" style="margin-bottom:12px"><div><b>${c.open||0}</b><span>Open</span></div><div style="border-top-color:#B7443E"><b>${c.overdue||0}</b><span>Overdue</span></div>
       <div style="border-top-color:#B87920"><b>${c.awaiting_ack||0}</b><span>Not acknowledged</span></div><div style="border-top-color:#2E7D4F"><b>${c.to_close||0}</b><span>Verified – to close</span></div></div>
-      <div class="tkchips">${[['open','Open'],['overdue','Overdue'],['ack','Not acknowledged'],['close','To close'],['all','All (14 days)']].map(x=>`<button type="button" data-f="${x[0]}" class="${filt===x[0]?'on':''}">${x[1]}</button>`).join('')}</div>
+      <div class="tkchips">${[['open','Open'],['draft','Drafts'],['carried','Carried'],['overdue','Overdue'],['ack','Not acknowledged'],['close','To close'],['all','All (14 days)']].map(x=>`<button type="button" data-f="${x[0]}" class="${filt===x[0]?'on':''}">${x[1]}</button>`).join('')}</div>
       ${list.length?list.map(a=>card(a,true)).join(''):'<p class="note">Nothing here.</p>'}</div>`;
     B.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{ filt=b.dataset.f; drawTeam(); });
-    bindCards(true);
+    bindCards();
   }
   const opt=(arr,v,ph)=>'<option value="">'+ph+'</option>'+arr.map(x=>{ const val=Array.isArray(x)?x[0]:x, lab=Array.isArray(x)?x[1]:x; return `<option value="${esc(val)}"${val===v?' selected':''}>${esc(lab)}</option>`; }).join('');
   function drawAssign(){
@@ -1677,46 +1711,55 @@ window.dpcsPhoto={
     const s=M.staff.find(x=>x.id===F.assignee_id), locs=M.locations.filter(l=>!s||!s.blocks.length||!l.block||l.block.split('+').some(b=>s.blocks.indexOf(b)>=0));
     const L1=locs.find(l=>l.name===F.location), wbs=L1?M.wbs.filter(w=>w.workfront_id===L1.wf):[];
     const w=wbs.find(x=>x.activity.toLowerCase()===String(F.activity).toLowerCase())||wbs.find(x=>F.activity&&(x.activity.toLowerCase().indexOf(F.activity.toLowerCase())>=0||F.activity.toLowerCase().indexOf(x.activity.toLowerCase())>=0));
-    const acts=wbs.length?wbs.map(x=>[x.activity,x.activity+' · bal '+x.balance+' '+x.unit]):M.activities;
+    const acts=wbs.length?wbs.map(x=>[x.activity,x.activity+' · available '+x.available+' '+x.unit]):M.activities.map(a=>[a.name,a.name+' ('+a.unit+')']);
     const duties=s?(M.duties[s.role]||[]):[];
     if(w&&!F.unit) F.unit=w.unit;
-    B.innerHTML=`<div class="card"><h2>Delegate work</h2>
+    B.innerHTML=`<div class="card"><h2>Delegate work${F.source==='MASTER_PLAN'?' · from master plan':''}</h2>
       <div class="tkseg"><button type="button" data-k="WORK" class="${F.kind==='WORK'?'on':''}">Quantity work (WBS)</button><button type="button" data-k="DUTY" class="${F.kind==='DUTY'?'on':''}">Duty / instruction</button></div>
       <div class="grid" style="margin-top:12px">
         <div class="full"><label class="f">Assign to <span class="req">*</span></label><select data-v="assignee_id">${opt(M.staff.map(x=>[x.id,x.name+' · '+x.role+(x.blocks.length?' · '+x.blocks.join(','):' · all towers')]),F.assignee_id,'Choose staff…')}</select></div>
         <div><label class="f">Location${F.kind==='WORK'?' <span class="req">*</span>':''}</label><select data-v="location">${opt(locs.map(l=>[l.name,l.name+(l.block&&l.name.indexOf(l.block)<0?' ('+l.block+')':'')]),F.location,'Location…')}</select></div>
         <div><label class="f">Floor / level</label><select data-v="floor">${opt((l=>l.base.concat(l.add))(lists('floors')),F.floor,'Any')}</select></div>
-        ${F.kind==='WORK'?`<div class="full"><label class="f">Activity (from the WBS of this location) <span class="req">*</span></label><select data-v="activity">${opt(acts,F.activity,F.location?'Activity…':'Choose location first')}</select>
-          ${w?`<div class="tkhint">WBS <b>${esc(w.wbs_id)}</b> · BOQ ${esc(w.boq)} ${esc(w.unit)} − verified ${esc(w.verified)} = <b>balance ${esc(w.balance)} ${esc(w.unit)}</b>${w.planned_finish?' · plan '+esc(w.planned_start)+' → '+esc(w.planned_finish):''} · ${esc(w.basis||'')}</div>`
-            :F.activity?'<div class="tkhint w">No WBS line for this location + activity — the task is allowed but will show as UNMAPPED.</div>':''}</div>
-        <div><label class="f">Target qty <span class="req">*</span></label><input type="number" inputmode="decimal" min="0" step="any" data-v="target_qty" value="${esc(F.target_qty)}"${w?` max="${w.balance}"`:''}></div>
+        ${F.kind==='WORK'?`<div class="full"><label class="f">Activity (WBS of this location) <span class="req">*</span></label><select data-v="activity">${opt(acts,F.activity,F.location?'Activity…':'Choose location first')}</select>
+          ${w?`<div class="tkhint">WBS <b>${esc(w.wbs_id)}</b> · BOQ ${esc(w.boq)} − verified ${esc(w.verified)} − reserved ${esc(w.reserved)} = <b>available ${esc(w.available)} ${esc(w.unit)}</b>${w.planned_finish?' · plan '+esc(w.planned_start)+' → '+esc(w.planned_finish):''} · ${esc(w.basis||'')}</div>`
+            :F.activity?'<div class="tkhint w">No WBS line for this location + activity — allowed, shown as UNMAPPED.</div>':''}</div>
+        <div><label class="f">Target qty <span class="req">*</span></label><input type="number" inputmode="decimal" min="0" step="any" data-v="target_qty" value="${esc(F.target_qty)}"${w?` max="${w.available}"`:''}></div>
         <div><label class="f">Unit <span class="req">*</span></label><select data-v="unit">${opt((l=>l.base.concat(l.add))(lists('units')),F.unit,'Unit…')}</select></div>`:''}
-        <div><label class="f">Start date</label><input type="date" data-v="task_date" value="${esc(F.task_date)}"></div>
-        <div><label class="f">Due date</label><input type="date" data-v="due_date" value="${esc(F.due_date)}"></div>
+        <div><label class="f">Work date</label><input type="date" data-v="task_date" value="${esc(F.task_date)}" min="${today()}"></div>
+        <div><label class="f">Due date</label><input type="date" data-v="due_date" value="${esc(F.due_date)}" min="${today()}"></div>
+        <div><label class="f">Shift start</label><input type="time" data-v="shift_start" value="${esc(F.shift_start||'')}"></div>
+        <div><label class="f">Shift end</label><input type="time" data-v="shift_end" value="${esc(F.shift_end||'')}"></div>
+        <div class="full"><label class="f">Contractor / gang</label><select data-v="contractor">${opt((l=>l.base.concat(l.add))(lists('contractors')),F.contractor||'','—')}</select></div>
+        <div class="full"><label class="f">Material / plant needs · QA hold</label><input type="text" data-v="resource_needs" value="${esc(F.resource_needs||'')}" placeholder="e.g. 6 MT cement, excavator 1, steel checklist pending"></div>
         <div class="full"><label class="f">Priority</label><div class="tkseg">${['High','Normal','Low'].map(p=>`<button type="button" data-p="${p}" class="${F.priority===p?'on':''}">${p}</button>`).join('')}</div></div>
         <div class="full"><label class="f">Instruction${F.kind==='DUTY'?' <span class="req">*</span>':' (optional)'}</label><textarea data-v="instruction" placeholder="${F.kind==='DUTY'?'What exactly must be done':'e.g. Complete bay 3 PCC before 5 pm'}">${esc(F.instruction)}</textarea>
           ${duties.length?`<div class="note" style="margin-top:6px">Typical ${esc(s.role)} duties (October Control Pack):</div><div class="tkduty">${duties.map(d=>`<button type="button" data-duty="${esc(d)}">${esc(d)}</button>`).join('')}</div>`:''}</div>
       </div>
-      <button class="btn pri" type="button" id="tkGo" style="width:100%;margin-top:14px;min-height:48px">Assign task</button>
-      <p class="note">The assignee sees it under My tasks and must acknowledge. Quantity tasks close only on PM-verified quantity; target cannot exceed the WBS balance.</p></div>`;
+      <div class="tkseg" style="margin-top:14px"><button type="button" id="tkDraft" class="on">Save to evening plan (draft)</button><button type="button" id="tkGo">Assign &amp; release now</button></div>
+      <p class="note">Drafts are released together from “Plan tomorrow”. Quantity tasks close only on PM-verified quantity; the target cannot exceed available = BOQ − verified − other open reservations. Duplicate tasks are refused.</p></div>`;
     B.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{ F.kind=b.dataset.k; drawAssign(); });
     B.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{ F.priority=b.dataset.p; drawAssign(); });
     B.querySelectorAll('[data-duty]').forEach(b=>b.onclick=()=>{ F.instruction=b.dataset.duty; if(F.kind==='WORK'&&!F.activity) F.kind='DUTY'; drawAssign(); });
-    B.querySelectorAll('[data-v]').forEach(el=>el.oninput=el.onchange=()=>{ F[el.dataset.v]=el.value; if(el.tagName==='SELECT'){ if(el.dataset.v==='location') { F.activity=''; F.unit=''; } if(el.dataset.v==='activity') F.unit=''; drawAssign(); } });
-    document.getElementById('tkGo').onclick=async e=>{ e.target.disabled=true; const r=await call(Object.assign({action:'task_create'},F)); e.target.disabled=false;
+    B.querySelectorAll('[data-v]').forEach(el=>el.oninput=el.onchange=()=>{ F[el.dataset.v]=el.value; if(el.tagName==='SELECT'){ if(el.dataset.v==='location') { F.activity=''; F.unit=''; } if(el.dataset.v==='activity') F.unit=''; if(['assignee_id','location','activity','floor'].indexOf(el.dataset.v)>=0) drawAssign(); } });
+    const submit=async(release,btn)=>{ btn.disabled=true; const r=await call(Object.assign({action:'task_create',release:release,command_id:cid('tsk')},F)); btn.disabled=false;
       if(!r.ok){ toast(ERR(r.error)); confirmBox('Not assigned',`<p style="margin:0">${esc(ERR(r.error))}</p>`,[['OK','pri']]); return; }
       const who=(M.staff.find(x=>x.id===F.assignee_id)||{}).name||'';
-      confirmBox('Task assigned',`<p style="margin:0">${esc(r.assignment_id)} → <b>${esc(who)}</b></p>${r.warning?'<p class="note" style="color:#9A6A00">'+esc(r.warning)+'</p>':''}`,[['OK','pri']]);
-      const keep={assignee_id:F.assignee_id,location:F.location,task_date:F.task_date,due_date:F.due_date}; F=Object.assign(blankF(),keep,{kind:F.kind});
+      confirmBox(r.merged?'Merged with carried task':release?'Task assigned':'Saved to plan',`<p style="margin:0">${esc(r.assignment_id)} → <b>${esc(who)}</b> · ${esc(r.status)}</p>${r.warning?'<p class="note" style="color:#9A6A00">'+esc(r.warning)+'</p>':''}`,[['OK','pri']]);
+      const keep={assignee_id:F.assignee_id,location:F.location,task_date:F.task_date,due_date:F.due_date}; F=Object.assign(blankF(),keep,{kind:F.kind}); PD=null;
       const m=await call({action:'task_meta'}); if(m.ok) M=m; const l=await call({action:'task_list'}); if(l.ok) L=l; tabs(); drawAssign(); };
+    document.getElementById('tkDraft').onclick=e=>submit(false,e.target);
+    document.getElementById('tkGo').onclick=e=>submit(true,e.target);
   }
-  async function drawScore(){
-    B.innerHTML='<div class="card note">Calculating…</div>';
-    const r=await call({action:'scorecard'}); if(!r.ok){ B.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return; } SC=r;
-    B.innerHTML=`<div class="card"><h2>${L.can_assign?'Team scorecard':'My scorecard'} · ${esc(r.period.start)} → ${esc(r.period.end)}</h2>
-      ${r.rows.map(x=>`<div class="sc"><div class="g ${esc(x.grade)}">${esc(x.grade)}<small>${x.score==null?'no data':x.score}</small></div><div><b>${esc(x.name)}</b> <span class="s">· ${esc(x.role)}${x.blocks&&x.blocks.length?' · '+esc(x.blocks.join(',')):''} · ${x.open_tasks} open${x.overdue?' · <b style="color:#B7443E">'+x.overdue+' overdue</b>':''}</span>
-        <div class="scp">${x.parts.map(p=>`<div>${esc(p.label)} <span class="s">(${p.weight})</span><div class="bb"><i style="width:${p.pct==null?0:p.pct}%"></i></div></div><div class="r">${p.pct==null?'—':p.pct+'%'}<br>${p.done}/${p.of}</div>`).join('')}</div></div></div>`).join('')||'<p class="note">No staff.</p>'}
-      <p class="note" style="margin-top:10px">${esc(r.basis)}</p></div>`;
+  async function drawCard(){
+    B.innerHTML='<div class="card note">Loading report cards…</div>';
+    const r=await call({action:'staff_cards'}); if(!r.ok){ B.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return; }
+    B.innerHTML=`<div class="card"><h2>${L.can_assign?'Team report cards':'My report card'} · ${esc(r.period.start)} → ${esc(r.period.end)}</h2>
+      ${r.summary.length?r.summary.map(s=>`<div class="rc"><b>${esc(s.staff_name)}</b> <span class="s">· ${esc(s.role)}</span>
+        <div class="s">${s.tasks} task(s) · ${s.closed} closed · ${s.on_time} on time · ${s.late?'<b style="color:#B7443E">'+s.late+' late</b> · ':''}${s.carried} carried · ${s.open} open · ${s.hindrances} hindrance(s)</div>
+        <div class="rcu">${Object.keys(s.units).map(u=>{ const q=s.units[u]; return `<span><b>${esc(u)}</b> assigned ${q.assigned} · reported ${q.reported} · <b style="color:#2E7D4F">verified ${q.verified}</b> · pending ${q.pending}</span>`; }).join('')||'<span>Duties only</span>'}</div></div>`).join(''):'<p class="note">No assigned tasks in this period.</p>'}
+      <p class="note" style="margin-top:10px">${esc(r.policy)}</p></div>
+      <div class="card"><h2>Task detail</h2><table class="dktbl"><tr><th>Date</th><th>Staff</th><th>Work</th><th class="r">Assigned</th><th class="r">Verified</th><th class="r">Pending</th><th>Status</th></tr>
+      ${r.rows.slice(0,80).map(x=>`<tr><td>${esc(x.date)}</td><td>${esc(x.staff_name)}</td><td>${esc(x.activity)}<div class="note">${esc(x.location)}${x.hindrances.length?' · ⚠ '+esc(x.hindrances[0]):''}</div></td><td class="r">${x.assigned_qty==null?'—':esc(x.assigned_qty)+' '+esc(x.unit)}</td><td class="r">${esc(x.verified_qty)}</td><td class="r">${esc(x.pending_qty)}</td><td>${esc(x.status)}${x.on_time===false?' <b style="color:#B7443E">late</b>':''}</td></tr>`).join('')}</table></div>`;
   }
   taskBtn();
 })();
@@ -1763,7 +1806,7 @@ window.dpcsPhoto={
   const val=id=>{ const el=B.querySelector('#'+id); return el?el.value.trim():''; };
   const evl=ids=>(ids||[]).map(id=>`<a href="#" data-ev="${esc(id)}">📷</a>`).join(' ');
 
-  const TABS=[['store','📦 Store',p=>p.store],['mach','🚜 Machines',p=>p.mach],['qa','🧪 QA/QC',p=>p.qa],['acc','💰 Accounts',p=>p.accounts],['appr','✅ Approvals',p=>p.pm||p.admin]];
+  const TABS=[['mat','🚚 Materials',p=>p.materials],['store','📦 Store',p=>p.store],['mach','🚜 Machines',p=>p.mach],['conc','🧱 Concrete',p=>p.pm||p.admin||p.qa],['qa','🧪 QA/QC',p=>p.qa],['acc','💰 Accounts',p=>p.accounts],['bill3','📑 Commercial',p=>p.accounts||p.pm],['appr','✅ Approvals',p=>p.pm||p.admin]];
   window.deskBtn=function(){
     const a=auth(), row=document.querySelector('.top .row'); let t=document.getElementById('btnDesk');
     const p=a&&a.perms; const any=p&&TABS.some(x=>x[2](p));
@@ -1780,10 +1823,142 @@ window.dpcsPhoto={
     TB.querySelectorAll('.dkt').forEach(b=>b.onclick=()=>show(b.dataset.t));
     show(t||(tabs.find(x=>x[0]===tab)||tabs[0])[0]); }
   document.getElementById('dkClose').onclick=()=>{ scrim.style.display='none'; };
-  function show(t){ tab=t; TB.querySelectorAll('.dkt').forEach(b=>b.classList.toggle('on',b.dataset.t===t)); ({store:Store,mach:Mach,qa:QA,acc:Acc,appr:Appr})[t](); }
+  function show(t){ tab=t; TB.querySelectorAll('.dkt').forEach(b=>b.classList.toggle('on',b.dataset.t===t)); ({mat:Mat,store:Store,mach:Mach,conc:Conc,qa:QA,acc:Acc,bill3:Bill3,appr:Appr})[t](); }
   const seg=(key,items)=>{ sub[key]=sub[key]||items[0][0]; return `<div class="dkseg">${items.map(i=>`<button type="button" data-seg="${key}" data-v="${i[0]}" class="${sub[key]===i[0]?'on':''}">${i[1]}</button>`).join('')}</div>`; };
   const wireSeg=fn=>B.querySelectorAll('[data-seg]').forEach(b=>b.onclick=()=>{ sub[b.dataset.seg]=b.dataset.v; fn(); });
   const locs=()=>META.locations.map(l=>l.name);
+
+
+  /* ---------------- v15 MATERIALS: request → PM approval → dispatch → transit → accepted receipt → site balance ---------------- */
+  let MQ={};
+  async function Mat(){
+    const p=META.perms;
+    B.innerHTML=`${seg('mt',[['req','Requests'],['rcv','Receive'],['bal','Balances']].concat(p.store?[['dsp','Dispatch']]:[]).concat(p.pm?[['cns','Consumption']]:[]))}<div id="dkIn"><div class="card note">Loading…</div></div>`; wireSeg(Mat);
+    const IN=B.querySelector('#dkIn'), L=await call({action:'mreq_list'});
+    if(!L.ok){ IN.innerHTML='<div class="card note">'+esc(ERR(L.error))+'</div>'; return; }
+    const mats=META.materials;
+    if(sub.mt==='req'){
+      IN.innerHTML=(p.site?`<div class="card"><h2>Request material to site</h2><div class="grid">
+          <div class="full"><label class="f">Material <span class="req">*</span></label><select id="qM">${opt(mats,MQ.material_id,'Select material…',x=>x.id,x=>x.name+' ('+x.unit+')')}</select></div>
+          <div><label class="f">Quantity <span class="req">*</span> <span class="note">${esc((mats.find(x=>x.id===MQ.material_id)||{}).unit||'')}</span></label><input type="number" inputmode="decimal" id="qQ" value="${esc(MQ.qty||'')}"></div>
+          <div><label class="f">Needed by</label><input type="date" id="qD" value="${esc(MQ.needed_by||today())}"></div>
+          <div class="full"><label class="f">Site location <span class="req">*</span></label><select id="qL">${opt(locs(),MQ.location,'Select…')}</select></div>
+          <div class="full"><label class="f">Purpose / task</label><input type="text" id="qP" value="${esc(MQ.purpose||'')}" placeholder="e.g. Raft-1 PCC bay 3"></div></div>
+          <button class="btn pri" type="button" id="qGo" style="width:100%;margin-top:10px">Send request</button>
+          <p class="note">Store shows available stock; the PM approves; the store dispatches; you accept on arrival (partial / damaged allowed).</p></div>`:'')+
+        (L.to_approve.length?`<div class="card"><h2>To approve (${L.to_approve.length})</h2>${L.to_approve.map(q=>`<div class="dkrow"><div class="t"><b>${esc(q.material)} · ${n(q.qty)} ${esc(q.unit)}</b>${st(q.status)}</div>
+          <div class="s">${esc(q.location)} · by ${esc(String(q.requested_by).split(' (')[0])} · store had ${n(q.store_available)} ${esc(q.unit)} at request · ${esc(q.purpose||'')}</div>
+          <div class="dkact"><input type="number" inputmode="decimal" placeholder="Approve qty (≤ ${q.qty})" data-aq="${esc(q.request_id)}"><input type="text" placeholder="Note (reason if rejecting)" data-an2="${esc(q.request_id)}">
+          <button class="btn pri" type="button" data-mra="${esc(q.request_id)}" data-v="${q.version}">Approve</button><button class="btn" type="button" data-mrr="${esc(q.request_id)}" style="color:#B7443E">Reject</button></div></div>`).join('')}</div>`:'')+
+        `<div class="card"><h2>Requests</h2>${L.requests.length?L.requests.slice(0,40).map(q=>`<div class="dkrow"><div class="t"><b>${esc(q.material)} · ${n(q.qty)} ${esc(q.unit)}</b>${st(q.status)}</div><div class="s">${esc(q.request_id)} · ${esc(q.location)} · approved ${n(q.approved_qty)} · dispatched ${n(q.dispatched_qty)} · received ${n(q.received_qty)}</div></div>`).join(''):'<p class="note">No requests.</p>'}</div>`;
+      const keep=()=>{ MQ={material_id:val('qM'),qty:val('qQ'),needed_by:val('qD'),location:val('qL'),purpose:val('qP')}; };
+      const qm=IN.querySelector('#qM'); if(qm) qm.onchange=()=>{ keep(); Mat(); };
+      const qg=IN.querySelector('#qGo'); if(qg) qg.onclick=async e=>{ keep(); busy(e.target,true); const r=await call(Object.assign({action:'mreq_submit',command_id:'MRQ-'+Date.now()},MQ)); busy(e.target,false);
+        if(!r.ok) return toast(ERR(r.error)); toast('Requested '+r.request_id+(r.shortage?' · store short by '+r.shortage:'')); MQ={}; Mat(); };
+      IN.querySelectorAll('[data-mra]').forEach(b=>b.onclick=async()=>{ const id=b.dataset.mra; busy(b,true); const r=await call({action:'mreq_decide',request_id:id,decision:'APPROVE',approved_qty:IN.querySelector(`[data-aq="${CSS.escape(id)}"]`).value,expected_version:+b.dataset.v,note:IN.querySelector(`[data-an2="${CSS.escape(id)}"]`).value,command_id:'MRA-'+id+'-'+b.dataset.v});
+        busy(b,false); toast(r.ok?'Approved '+r.approved_qty:ERR(r.error)); if(r.ok) Mat(); });
+      IN.querySelectorAll('[data-mrr]').forEach(b=>b.onclick=async()=>{ const id=b.dataset.mrr; const r=await call({action:'mreq_decide',request_id:id,decision:'REJECT',note:IN.querySelector(`[data-an2="${CSS.escape(id)}"]`).value}); toast(r.ok?'Rejected':ERR(r.error)); if(r.ok) Mat(); });
+    } else if(sub.mt==='dsp'){
+      IN.innerHTML=`<div class="card"><h2>Approved – to dispatch (${L.to_dispatch.length})</h2>${L.to_dispatch.length?L.to_dispatch.map(q=>`<div class="dkrow"><div class="t"><b>${esc(q.material)} → ${esc(q.location)}</b>${st(q.status)}</div>
+        <div class="s">approved ${n(q.approved_qty)} ${esc(q.unit)} · dispatched ${n(q.dispatched_qty)}</div><div class="dkact"><input type="number" inputmode="decimal" placeholder="Dispatch qty (${esc(q.unit)})" data-dq="${esc(q.request_id)}"><input type="text" placeholder="Vehicle / challan ref" data-dv="${esc(q.request_id)}">
+        <button class="btn pri" type="button" data-dsp="${esc(q.request_id)}">Dispatch</button></div></div>`).join(''):'<p class="note">Nothing approved to dispatch.</p>'}</div>
+        <div class="card"><h2>Recent dispatches</h2>${L.dispatches.slice(0,30).map(d=>`<div class="dkrow"><div class="t"><b>${esc(d.material)} · ${n(d.dispatched)} ${esc(d.unit)}</b>${st(d.status)}</div><div class="s">${esc(d.dispatch_id)} · ${esc(d.from)} → ${esc(d.to)} · accepted ${n(d.accepted)} · damaged ${n(d.damaged)} · returned ${n(d.returned)}</div>
+          ${d.status==='IN_TRANSIT'&&!d.accepted&&!d.damaged&&!d.returned?`<div class="dkact"><input type="text" placeholder="Reason to cancel" data-cn="${esc(d.dispatch_id)}"><button class="btn" type="button" data-dcx="${esc(d.dispatch_id)}">Cancel dispatch</button></div>`:''}</div>`).join('')||'<p class="note">None.</p>'}</div>`;
+      IN.querySelectorAll('[data-dsp]').forEach(b=>b.onclick=async()=>{ const id=b.dataset.dsp; busy(b,true); const r=await call({action:'dispatch_submit',request_id:id,qty:IN.querySelector(`[data-dq="${CSS.escape(id)}"]`).value,vehicle_ref:IN.querySelector(`[data-dv="${CSS.escape(id)}"]`).value,command_id:'DSP-'+id+'-'+Date.now()});
+        busy(b,false); toast(r.ok?'Dispatched '+r.dispatch_id+' (in transit)':ERR(r.error)); if(r.ok) Mat(); });
+      IN.querySelectorAll('[data-dcx]').forEach(b=>b.onclick=async()=>{ const id=b.dataset.dcx; const r=await call({action:'dispatch_cancel',dispatch_id:id,note:IN.querySelector(`[data-cn="${CSS.escape(id)}"]`).value}); toast(r.ok?'Cancelled':ERR(r.error)); if(r.ok) Mat(); });
+    } else if(sub.mt==='rcv'){
+      IN.innerHTML=`<div class="card"><h2>In transit – receive (${L.to_receive.length})</h2>${L.to_receive.length?L.to_receive.map(d=>{ const open=Math.round((d.dispatched-d.accepted-d.damaged-d.returned)*1e6)/1e6; return `<div class="dkrow"><div class="t"><b>${esc(d.material)} · ${n(open,3)} ${esc(d.unit)} open</b>${st(d.status)}</div>
+        <div class="s">${esc(d.dispatch_id)} · ${esc(d.from)} → ${esc(d.to)} · by ${esc(String(d.dispatched_by).split(' (')[0])} · ${esc(d.vehicle_ref||'')}</div>
+        <div class="dkact"><input type="number" inputmode="decimal" placeholder="Accepted" data-ra="${esc(d.dispatch_id)}"><input type="number" inputmode="decimal" placeholder="Damaged" data-rd="${esc(d.dispatch_id)}"><input type="number" inputmode="decimal" placeholder="Returned to sender" data-rr="${esc(d.dispatch_id)}">
+        <input type="text" placeholder="Note (required if damaged)" data-rn="${esc(d.dispatch_id)}"><button class="btn pri" type="button" data-rcv="${esc(d.dispatch_id)}" data-v="${d.version}">Record receipt</button></div></div>`; }).join(''):'<p class="note">Nothing in transit for you.</p>'}</div>
+        ${p.site?`<div class="card"><h2>Return material from site to store</h2><div class="grid"><div class="full"><select id="rtM">${opt(mats,'','Material…',x=>x.id,x=>x.name+' ('+x.unit+')')}</select></div>
+          <div><input type="number" inputmode="decimal" id="rtQ" placeholder="Quantity"></div><div><select id="rtL">${opt(locs(),'','From location…')}</select></div><div class="full"><input type="text" id="rtN" placeholder="Reason (required)"></div></div>
+          <button class="btn" type="button" id="rtGo" style="width:100%;margin-top:8px">Send back to store</button></div>`:''}`;
+      IN.querySelectorAll('[data-rcv]').forEach(b=>b.onclick=async()=>{ const id=b.dataset.rcv, g=k=>IN.querySelector(`[data-${k}="${CSS.escape(id)}"]`).value; busy(b,true);
+        const r=await call({action:'receipt_submit',dispatch_id:id,accepted_qty:g('ra')||0,damaged_qty:g('rd')||0,returned_qty:g('rr')||0,note:g('rn'),expected_version:+b.dataset.v,command_id:'RCV-'+id+'-v'+b.dataset.v});
+        busy(b,false); toast(r.ok?r.status+(r.in_transit?' · '+r.in_transit+' still in transit':''):ERR(r.error)); if(r.ok) Mat(); });
+      const rg=IN.querySelector('#rtGo'); if(rg) rg.onclick=async()=>{ const r=await call({action:'site_return',material_id:val('rtM'),qty:val('rtQ'),location:val('rtL'),note:val('rtN'),command_id:'RET-'+Date.now()}); toast(r.ok?'Return in transit '+r.dispatch_id:ERR(r.error)); if(r.ok) Mat(); };
+    } else if(sub.mt==='cns'){
+      IN.innerHTML=`<div class="card"><h2>Site consumption to verify (${L.consumption_pending.length})</h2>${L.consumption_pending.map(c=>`<div class="dkrow"><div class="t"><b>${esc(c.material_id)} · ${n(c.qty)} ${esc(c.unit)}</b><span class="dkst wt">PENDING</span></div><div class="s">${esc(c.location)} · ${esc(c.by)}</div>
+        <div class="dkact"><button class="btn pri" type="button" data-cv="${esc(c.id)}">Verify & post</button><button class="btn" type="button" data-cr="${esc(c.id)}">Return</button></div></div>`).join('')||'<p class="note">Nothing pending. Concrete ingredients post from the verified pour (Concrete tab).</p>'}</div>`;
+      IN.querySelectorAll('[data-cv]').forEach(b=>b.onclick=async()=>{ const r=await call({action:'consume_verify',consumption_id:b.dataset.cv,decision:'VERIFY',command_id:'CNS-'+b.dataset.cv}); toast(r.ok?r.status:ERR(r.error)); if(r.ok) Mat(); });
+      IN.querySelectorAll('[data-cr]').forEach(b=>b.onclick=async()=>{ const r=await call({action:'consume_verify',consumption_id:b.dataset.cr,decision:'RETURN'}); toast(r.ok?r.status:ERR(r.error)); if(r.ok) Mat(); });
+    } else {
+      const s=await call({action:'stock_locations'}); if(!s.ok){ IN.innerHTML='<div class="card note">'+esc(ERR(s.error))+'</div>'; return; }
+      const R=s.reconcile;
+      IN.innerHTML=`<div class="card"><h2>Reconciliation</h2>${R.ok?'<p class="note" style="color:#2E7D4F"><b>Ledger reconciles</b> by material · unit · location.</p>':R.issues.map(i=>`<div class="ctwarn">${esc(i)}</div>`).join('')}</div>
+        <div class="card"><h2>Usable balance by location</h2>${s.balances.length?`<table class="dktbl"><tr><th>Material</th><th>Location</th><th class="r">Balance</th><th>Unit</th></tr>${s.balances.filter(b=>Math.abs(b.qty)>1e-9).map(b=>`<tr><td>${esc(b.material)}</td><td>${esc(b.location)}</td><td class="r"><b>${n(b.qty,3)}</b></td><td>${esc(b.unit)}</td></tr>`).join('')}</table>`:'<p class="note">No accepted movements yet. A PM-verified store receipt (GRN) starts the ledger.</p>'}
+        <p class="note">STORE = main store · TRANSIT = dispatched not yet accepted · SITE:… = accepted at site · QUARANTINE = damaged. GRN is inventory, not consumption.</p></div>`;
+    }
+  }
+  /* ---------------- v15 CONCRETE: verify pour → consumption (RMC volume / approved recipe), corrections ---------------- */
+  async function Conc(){
+    B.innerHTML='<div class="card note">Loading…</div>';
+    const r=await call({action:'pour_concrete_list'}); if(!r.ok){ B.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return; }
+    const p=META.perms, pend=r.pours.filter(x=>x.approval_status==='PENDING_PM_VERIFICATION');
+    B.innerHTML=(p.pm?`<div class="card"><h2>Pours to verify (${pend.length})</h2>${pend.map(x=>`<div class="dkrow"><div class="t"><b>${esc(x.grade)} · ${esc(x.mode==='RMC'?'RMC':'Site mix '+x.recipe_id)} · ${n(x.accepted_qty)} m³</b>${st(x.approval_status)}</div>
+        <div class="s">${esc(x.pour_id)} r${x.revision} · ${esc(x.location)} · ${esc(x.floor)} ${esc(x.member||'')} · ${esc(x.batch_refs||'')}</div>
+        <div class="dkact"><input type="number" inputmode="decimal" placeholder="Verified m³ (${n(x.accepted_qty)})" data-pq="${esc(x.pour_id)}"><button class="btn pri" type="button" data-pv="${esc(x.pour_id)}" data-r="${x.revision}">Verify quantity &amp; post consumption</button></div></div>`).join('')||'<p class="note">Nothing to verify. Pours appear here when the engineer records the pour on a pour card.</p>'}</div>`:'')+
+      `<div class="card"><h2>Recent pours</h2>${r.pours.slice(0,20).map(x=>`<div class="dkrow"><div class="t"><b>${esc(x.pour_id)} r${x.revision} · ${n(x.accepted_qty)} m³ ${esc(x.grade)}</b>${st(x.posting_status||x.approval_status)}</div><div class="s">${esc(x.mode)} ${esc(x.recipe_id||'')} · ${esc(x.location)} · ${esc(x.verified_by?String(x.verified_by).split(' (')[0]:'')} ${esc(x.note||'')}</div>
+        ${p.pm&&x.approval_status==='VERIFIED'?`<div class="dkact"><input type="number" inputmode="decimal" placeholder="Corrected m³" data-xq="${esc(x.pour_id)}"><input type="text" placeholder="Correction reason (required)" data-xn="${esc(x.pour_id)}"><button class="btn" type="button" data-px="${esc(x.pour_id)}" data-r="${x.revision}">Correct (reverse + re-post)</button><button class="btn" type="button" data-pc="${esc(x.pour_id)}" data-r="${x.revision}" style="color:#B7443E">Cancel pour</button></div>`:''}</div>`).join('')||'<p class="note">No pours yet.</p>'}</div>
+      <div class="card"><h2>Mix recipes</h2>${r.recipes.map(c=>`<div class="dkrow"><div class="t"><b>${esc(c.recipe_id)} · ${esc(c.grade)}</b>${st(c.approval_status)}</div><div class="s">${esc(c.basis)}${c.yield_m3?' · yield '+c.yield_m3+' m³':''}<br>${Array.isArray(c.components)?c.components.map(x=>esc(x.material_id)+' '+x.qty+' '+esc(x.unit)).join(' · '):esc(JSON.stringify(c.components))}</div>
+        ${p.admin&&c.approval_status!=='APPROVED'&&Array.isArray(c.components)?`<div class="dkact"><input type="number" inputmode="decimal" placeholder="Batch yield m³ (from approved mix design)" data-ry="${esc(c.recipe_id)}"><input type="text" placeholder="Approval document / reference" data-rs="${esc(c.recipe_id)}"><button class="btn" type="button" data-ra2="${esc(c.recipe_id)}">Record engineering approval</button></div>`:''}</div>`).join('')}
+        <p class="note">RMC pours record RMC volume only – company cement / GGBS / sand / aggregate are not debited. Site-mix ingredients post once from the SITE stock, only with an approved recipe and enough stock.</p></div>`;
+    B.querySelectorAll('[data-pv]').forEach(b=>b.onclick=async()=>{ const id=b.dataset.pv; busy(b,true); const x=await call({action:'pour_concrete_verify',pour_id:id,revision:+b.dataset.r,verified_qty:B.querySelector(`[data-pq="${CSS.escape(id)}"]`).value,command_id:'PV-'+id+'-'+b.dataset.r});
+      busy(b,false); toast(x.ok?'Verified · '+x.posting_status:ERR(x.error)); if(x.ok) Conc(); });
+    B.querySelectorAll('[data-px],[data-pc]').forEach(b=>b.onclick=async()=>{ const id=b.dataset.px||b.dataset.pc; const x=await call({action:'pour_concrete_correct',pour_id:id,revision:+b.dataset.r,verified_qty:(B.querySelector(`[data-xq="${CSS.escape(id)}"]`)||{}).value,note:(B.querySelector(`[data-xn="${CSS.escape(id)}"]`)||{}).value,cancel:!!b.dataset.pc});
+      toast(x.ok?(x.status||x.posting_status)+' · reversed '+x.reversed_lines:ERR(x.error)); if(x.ok) Conc(); });
+    B.querySelectorAll('[data-ra2]').forEach(b=>b.onclick=async()=>{ const id=b.dataset.ra2; const x=await call({action:'recipe_approve',recipe_id:id,yield_m3:B.querySelector(`[data-ry="${CSS.escape(id)}"]`).value,source:B.querySelector(`[data-rs="${CSS.escape(id)}"]`).value}); toast(x.ok?'Recipe approved':ERR(x.error)); if(x.ok) Conc(); });
+  }
+  /* ---------------- v15 COMMERCIAL: rate versions, measurements, bill drafts with reservations, slab milestones, area register, value, decisions ---------------- */
+  async function Bill3(){
+    const p=META.perms;
+    B.innerHTML=`${seg('b3',[['val','Value'],['draft','Bill drafts'],['rates','Rates'],['slab','Slab milestones'],['area','Area register']].concat(p.admin?[['dec','Owner decisions']]:[]))}<div id="dkIn"><div class="card note">Loading…</div></div>`; wireSeg(Bill3);
+    const IN=B.querySelector('#dkIn');
+    if(sub.b3==='val'){ const v=await call({action:'value_control'}); if(!v.ok){ IN.innerHTML='<div class="card note">'+esc(ERR(v.error))+'</div>'; return; }
+      const na=x=>x==null?'N/A':'₹'+n(x);
+      IN.innerHTML=`<div class="card"><h2>Kept separate · ${esc(v.as_of)}</h2><div class="ctk"><div><b>${na(v.EV)}</b><span>Earned value (budget cost)</span></div><div><b>${na(v.client_bill_value_issued||null)}</b><span>Client bill value (issued)</span></div>
+        <div><b>${na(v.subcontract_payable_certified)}</b><span>Subcontract payable</span></div><div><b>${na(v.recognised_margin)}</b><span>Recognised margin</span></div></div>
+        <table class="dktbl" style="margin-top:10px"><tr><td>EV status</td><td>${esc(v.ev_status)}</td></tr><tr><td>Margin</td><td>${esc(v.margin_status)}</td></tr><tr><td>Cash paid to contractors</td><td>₹${n(v.cash_payments)}</td></tr><tr><td>Cash receipts</td><td>${esc(v.cash_receipts_status)}</td></tr><tr><td>Inventory value</td><td>${esc(v.inventory_status)}</td></tr><tr><td>Client drafts</td><td>₹${n(v.client_bill_value_draft)}</td></tr></table>
+        <p class="note">${esc(v.note)}</p></div>`; return; }
+    if(sub.b3==='draft'){ const g=await call({action:'bill_register_v3'}); if(!g.ok){ IN.innerHTML='<div class="card note">'+esc(ERR(g.error))+'</div>'; return; }
+      IN.innerHTML=(p.accounts?`<div class="card"><h2>Prepare a draft from verified measurements</h2><div class="grid"><div><select id="bS"><option value="SUBCONTRACT">Subcontract (payable)</option><option value="CLIENT">Client (receivable)</option></select></div>
+        <div><input type="text" id="bP" placeholder="Party exactly as in the rate" value="Buildwell Construction Company"></div><div><input type="date" id="bF"></div><div><input type="date" id="bT" value="${today()}"></div></div>
+        <button class="btn pri" type="button" id="bGo" style="width:100%;margin-top:8px">Prepare draft (reserves quantities)</button><p class="note">Only PM-verified, unbilled measurement with an approved rate in its validity period. Tax / deductions / retention are not applied until the owner confirms the policy; issue stays blocked.</p></div>`:'')+
+        `<div class="card"><h2>Drafts &amp; bills</h2>${g.bills.length?g.bills.slice(0,30).map(x=>`<div class="dkrow"><div class="t"><b>${esc(x.bill_id)} · ${esc(x.side)} · ₹${n(x.gross)}</b>${st(x.status)}</div><div class="s">${esc(x.party)} · ${esc(x.period)} · net ${x.net===''||x.net==null?'N/A':'₹'+n(x.net)}${x.blocked?'<br>'+esc(String(x.blocked).slice(0,220)):''}</div>
+          ${p.accounts&&String(x.status).indexOf('DRAFT')===0?`<div class="dkact"><button class="btn" type="button" data-bc="${esc(x.bill_id)}">Cancel draft (release quantities)</button><button class="btn" type="button" data-bi="${esc(x.bill_id)}">Issue…</button></div>`:''}</div>`).join(''):'<p class="note">No drafts yet.</p>'}</div>`;
+      const go=IN.querySelector('#bGo'); if(go) go.onclick=async e=>{ busy(e.target,true); const x=await call({action:'bill_draft_v3',side:val('bS'),party_id:val('bP'),period_start:val('bF'),period_end:val('bT'),command_id:'BD-'+val('bS')+'-'+val('bP')+'-'+val('bF')+'-'+val('bT')}); busy(e.target,false);
+        if(!x.ok){ confirmBox('Draft blocked',`<p style="margin:0">${esc(ERR(x.error))}</p>`,[['OK','pri']]); return; } toast((x.replay?'Existing draft ':'Draft ')+x.bill_id+' · ₹'+n(x.gross_work_value)); Bill3(); };
+      IN.querySelectorAll('[data-bc]').forEach(b=>b.onclick=async()=>{ const x=await call({action:'bill_cancel_v3',bill_id:b.dataset.bc}); toast(x.ok?'Cancelled · released '+x.released_allocations:ERR(x.error)); if(x.ok) Bill3(); });
+      IN.querySelectorAll('[data-bi]').forEach(b=>b.onclick=async()=>{ const x=await call({action:'bill_issue_v3',bill_id:b.dataset.bi}); confirmBox(x.ok?'Issued':'Issue blocked',`<p style="margin:0">${esc(x.ok?x.bill_id:ERR(x.error))}</p>`,[['OK','pri']]); });
+      return; }
+    if(sub.b3==='rates'){ const g=await call({action:'rate_versions'}); if(!g.ok){ IN.innerHTML='<div class="card note">'+esc(ERR(g.error))+'</div>'; return; }
+      IN.innerHTML=(p.accounts?`<div class="card"><h2>Propose a rate version</h2><div class="grid"><div><select id="rS"><option value="SUBCONTRACT">Subcontract</option><option value="CLIENT">Client</option><option value="HIRE">Machine hire</option><option value="LABOUR">Labour</option><option value="BUDGET">Budget cost (EV)</option></select></div>
+        <div><input type="text" id="rP" placeholder="Party / machine id"></div><div><input type="text" id="rA" placeholder="Work item / activity"></div><div><input type="text" id="rU" placeholder="Unit (e.g. m³, sqft)"></div>
+        <div><input type="number" inputmode="decimal" id="rR" placeholder="Rate ₹"></div><div><select id="rB"><option value="PER_UNIT">Per unit</option><option value="PER_HOUR">Per hour</option><option value="PER_TRIP">Per trip</option><option value="PER_MONTH">Per month</option></select></div>
+        <div><label class="f">Effective from</label><input type="date" id="rF"></div><div><label class="f">Effective to</label><input type="date" id="rT"></div>
+        <div class="full"><input type="text" id="rC" placeholder="Hourly hire charged on (RUNNING_HOURS) – leave blank otherwise"></div><div class="full"><input type="text" id="rX" placeholder="Agreement / work order reference (required)"></div><div class="full"><input type="text" id="rI" placeholder="Inclusions / exclusions (operator, fuel…)"></div></div>
+        <button class="btn pri" type="button" id="rGo" style="width:100%;margin-top:8px">Propose (Admin approves)</button></div>`:'')+
+        `<div class="card"><h2>Rate versions</h2><table class="dktbl"><tr><th>Rate</th><th>Side · party</th><th>Item · unit</th><th class="r">₹</th><th>Status</th></tr>${g.rates.map(r=>`<tr><td>${esc(r.rate_id)}<div class="note">${esc(r.basis)} ${r.effective_from?'from '+esc(r.effective_from):''}</div></td><td>${esc(r.side)}<div class="note">${esc(r.party_id)}</div></td><td>${esc(r.activity_id)}<div class="note">${esc(r.unit||'unit pending')}</div></td><td class="r">${n(r.rate)}</td><td>${st(r.approval_status)}${p.admin&&r.approval_status==='PROPOSED'?`<br><button class="btn" type="button" data-rva="${esc(r.rate_id)}" style="min-height:30px;font-size:12px">Approve</button>`:''}</td></tr>`).join('')}</table>
+        <p class="note">₹1,400 core house, ₹1,200 finishing and ₹60 steel/shuttering labour are kept as the owner stated them, marked PENDING_SCOPE_CONFIRMATION until the area unit, stage allocation and combined/separate scope are confirmed. Historical master rates are candidates only.</p></div>`;
+      const go=IN.querySelector('#rGo'); if(go) go.onclick=async()=>{ const x=await call({action:'rate_version_propose',side:val('rS'),party_id:val('rP'),activity_id:val('rA'),unit:val('rU'),rate:val('rR'),basis:val('rB'),effective_from:val('rF'),effective_to:val('rT'),charge_on:val('rC'),source_ref:val('rX'),inclusions:val('rI')}); toast(x.ok?'Proposed '+x.rate_id:ERR(x.error)); if(x.ok) Bill3(); };
+      IN.querySelectorAll('[data-rva]').forEach(b=>b.onclick=async()=>{ const x=await call({action:'rate_version_approve',rate_id:b.dataset.rva,decision:'APPROVE'}); toast(x.ok?'Approved':ERR(x.error)); if(x.ok) Bill3(); });
+      return; }
+    if(sub.b3==='slab'){ const g=await call({action:'slab_milestones'}); IN.innerHTML=`<div class="card"><h2>Slab-casting milestones</h2>${(g.milestones||[]).map(m=>`<div class="dkrow"><div class="t"><b>${esc(m.key)}</b>${st(m.status)}</div><div class="s">${esc(m.pour_id)} · ${esc(m.triggered_at)} · ${esc(m.blocked_reason||'')}</div></div>`).join('')||'<p class="note">None yet. Triggered once per block/floor when QA closes a slab pour card ACCEPTED and the PM verifies the pour quantity.</p>'}</div>`; return; }
+    if(sub.b3==='area'){ const g=await call({action:'area_list'});
+      IN.innerHTML=`<div class="card"><h2>Area register (from approved drawings)</h2><div class="grid"><div><input type="text" id="aD" placeholder="Drawing ref"></div><div><input type="text" id="aR" placeholder="Revision"></div><div><input type="text" id="aB" placeholder="Block (e.g. A1)"></div><div><input type="text" id="aF" placeholder="Floor (e.g. Stilt-1)"></div>
+        <div><select id="aT"><option value="">Area type…</option><option>SLAB</option><option>BUILT_UP</option><option>COVERED</option><option>CARPET</option></select></div><div><input type="number" inputmode="decimal" id="aQ" placeholder="Area"></div><div><input type="text" id="aU" placeholder="Unit (sqft / m²)"></div><div><input type="text" id="aX" placeholder="Deductions"></div>
+        <div class="full"><input type="text" id="aM" placeholder="Measurement rule (required)"></div></div><button class="btn pri" type="button" id="aGo" style="width:100%;margin-top:8px">Add (Admin approves)</button></div>
+        <div class="card"><h2>Register</h2>${(g.areas||[]).map(a=>`<div class="dkrow"><div class="t"><b>${esc(a.block)} ${esc(a.floor)} · ${esc(a.area_type)} ${n(a.qty)} ${esc(a.unit)}</b>${st(a.status)}</div><div class="s">${esc(a.drawing_ref)} ${esc(a.revision)} · ${esc(a.rule)}</div>${p.admin&&a.status==='PROPOSED'?`<div class="dkact"><button class="btn" type="button" data-aa2="${esc(a.area_id)}">Approve</button></div>`:''}</div>`).join('')||'<p class="note">Empty – the owner-approved area schedule per block/floor is needed before any slab milestone amount is calculated. Foundation quantities are not used as slab area.</p>'}</div>`;
+      IN.querySelector('#aGo').onclick=async()=>{ const x=await call({action:'area_add',drawing_ref:val('aD'),revision:val('aR'),block:val('aB'),floor:val('aF'),area_type:val('aT'),qty:val('aQ'),unit:val('aU'),deductions:val('aX'),measurement_rule:val('aM')}); toast(x.ok?'Added '+x.area_id:ERR(x.error)); if(x.ok) Bill3(); };
+      IN.querySelectorAll('[data-aa2]').forEach(b=>b.onclick=async()=>{ const x=await call({action:'area_approve',area_id:b.dataset.aa2}); toast(x.ok?'Approved':ERR(x.error)); if(x.ok) Bill3(); });
+      return; }
+    const g=await call({action:'control_settings'}); if(!g.ok){ IN.innerHTML='<div class="card note">'+esc(ERR(g.error))+'</div>'; return; }
+    IN.innerHTML=`<div class="card"><h2>Owner decisions</h2><p class="note">Record only what the owner confirmed, with where it was confirmed. Dependent features switch on from these values.</p>${g.settings.map(s=>`<div class="dkrow"><div class="t"><b>${esc(s.key)}</b>${st(s.status)}</div><div class="s">${esc(JSON.stringify(s.value))} ${s.approved_by?'· '+esc(String(s.approved_by).split(' (')[0])+' '+esc(s.approved_at):''}</div>
+      ${/AWAITING|PENDING/.test(s.status)?`<div class="dkact"><input type="text" placeholder='Confirmed value (JSON, e.g. "20:00")' data-sv="${esc(s.key)}"><input type="text" placeholder="Confirmed where / when (required)" data-ss="${esc(s.key)}"><button class="btn" type="button" data-sset="${esc(s.key)}">Record</button></div>`:''}</div>`).join('')}</div>`;
+    IN.querySelectorAll('[data-sset]').forEach(b=>b.onclick=async()=>{ const k=b.dataset.sset; const x=await call({action:'control_setting_set',key:k,value:IN.querySelector(`[data-sv="${CSS.escape(k)}"]`).value,source:IN.querySelector(`[data-ss="${CSS.escape(k)}"]`).value}); toast(x.ok?'Recorded':ERR(x.error)); if(x.ok) Bill3(); });
+  }
 
   /* ---------------- STORE ---------------- */
   let SF={type:'RECEIPT'};
@@ -1832,8 +2007,17 @@ window.dpcsPhoto={
 
   /* ---------------- MACHINES ---------------- */
   let MF={};
+  async function MachFuel(IN){
+    if(sub.mc==='fuel'){ IN.innerHTML=`<div class="card"><h2>Diesel issue to a machine</h2><div class="grid"><div class="full"><select id="fM">${opt(META.machines,'','Machine…',x=>x.id,x=>x.name)}</select></div><div><input type="number" inputmode="decimal" id="fQ" placeholder="Litres issued"></div><div><input type="date" id="fD" value="${today()}" max="${today()}"></div><div class="full"><input type="text" id="fN" placeholder="Note / slip no."></div></div>
+      <button class="btn pri" type="button" id="fGo" style="width:100%;margin-top:8px">Issue from store stock (Diesel)</button><p class="note">Moves diesel STORE → machine in the material ledger. Issue is not consumption.</p></div>`;
+      IN.querySelector('#fGo').onclick=async e=>{ busy(e.target,true); const r=await call({action:'fuel_issue',machine_id:val('fM'),qty:val('fQ'),date:val('fD'),note:val('fN'),command_id:'FUEL-'+Date.now()}); busy(e.target,false); toast(r.ok?'Issued '+r.fuel_event_id:ERR(r.error)); };
+      return; }
+    const r=await call({action:'machine_daily',date:today()}); if(!r.ok){ IN.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return; }
+    IN.innerHTML=`<div class="card"><h2>Plant today · ${esc(r.date)}</h2>${r.machines.length?`<table class="dktbl"><tr><th>Machine</th><th class="r">Cap.</th><th class="r">Prod.</th><th class="r">Idle</th><th class="r">Brk</th><th class="r">Util.</th><th>Hire cost</th></tr>${r.machines.map(m=>`<tr><td>${esc(m.machine)}<div class="note">${esc(m.status)}</div></td><td class="r">${n(m.capacity)}</td><td class="r">${n(m.productive)}</td><td class="r">${n(m.idle)}</td><td class="r">${n(m.breakdown)}</td><td class="r">${m.utilisation==null?'N/A':n(m.utilisation,1)+'%'}</td><td>${m.cost==null?'<span class="note">'+esc(m.cost_status)+'</span>':'₹'+n(m.cost)}</td></tr>`).join('')}</table>`:'<p class="note">No logs today.</p>'}<p class="note">${esc(r.note)}</p></div>`;
+  }
   async function Mach(){
-    B.innerHTML=`${seg('mc',[['new','Daily log'],['mine','My logs'],['add','Add machine']])}<div id="dkIn"></div>`; wireSeg(Mach);
+    B.innerHTML=`${seg('mc',[['new','Daily log'],['fuel','Fuel issue'],['day','Daily view'],['mine','My logs'],['add','Add machine']])}<div id="dkIn"></div>`; wireSeg(Mach);
+    if(sub.mc==='fuel'||sub.mc==='day'){ const IN2=B.querySelector('#dkIn'); return MachFuel(IN2); }
     const IN=B.querySelector('#dkIn');
     if(sub.mc==='new'){
       IN.innerHTML=`<div class="card"><h2>Machine daily log</h2><div class="grid">
@@ -1844,15 +2028,18 @@ window.dpcsPhoto={
         <div><label class="f">End meter (HMR)</label><input type="number" inputmode="decimal" id="mE" value="${MF.end_meter||''}"></div>
         <div><label class="f">Running hours</label><input type="number" inputmode="decimal" id="mR" value="${MF.running_hours||''}" placeholder="auto from meter"></div>
         <div><label class="f">Idle hours</label><input type="number" inputmode="decimal" id="mI" value="${MF.idle_hours||''}"></div>
-        <div><label class="f">Diesel issued (L)</label><input type="number" inputmode="decimal" id="mF" value="${MF.diesel_l||''}"></div>
+        <div><label class="f">Shift hours available <span class="req">*</span></label><input type="number" inputmode="decimal" id="mC" value="${MF.shift_capacity_hours||''}" placeholder="e.g. 9"></div>
+        <div><label class="f">Maintenance hours</label><input type="number" inputmode="decimal" id="mMt" value="${MF.maintenance_hours||''}"></div>
+        <div><label class="f">Diesel consumed (L, log)</label><input type="number" inputmode="decimal" id="mF" value="${MF.diesel_l||''}"></div>
+        <div><label class="f">Trips (tractor / tipper)</label><input type="number" inputmode="numeric" id="mTp" value="${MF.trips||''}"></div>
         <div><label class="f">Operator</label><input type="text" id="mO" value="${esc(MF.operator||'')}"></div>
         <div class="full"><label class="f">Activity / work done</label><input type="text" id="mA" value="${esc(MF.activity||'')}"></div>
         <div class="full"><label class="f"><input type="checkbox" id="mB" ${MF.breakdown?'checked':''} style="width:auto;min-height:0;margin-right:6px">Breakdown today</label>
-          ${MF.breakdown?'<textarea id="mBN" placeholder="What failed? Since when? (required)">'+esc(MF.breakdown_note||'')+'</textarea>':''}</div>
+          ${MF.breakdown?'<input type="number" inputmode="decimal" id="mBH" placeholder="Breakdown hours (required)" value="'+esc(MF.breakdown_hours||'')+'"><textarea id="mBN" placeholder="What failed? Since when? (required)">'+esc(MF.breakdown_note||'')+'</textarea>':''}</div>
         <div class="full"><label class="f">Remarks</label><textarea id="mRm">${esc(MF.remarks||'')}</textarea></div></div>${phRow('mach')}
-        <p class="note">One log per machine per day. PM verifies before it counts for hire billing.</p>
+        <p class="note">One log per machine per day. Running + idle + breakdown + maintenance cannot exceed the shift hours. Fuel issued from store is recorded separately (Fuel issue); the log figure is consumption. PM verifies before it counts for hire cost.</p>
         <button class="btn pri" type="button" id="mGo" style="width:100%;margin-top:10px">Submit for PM verification</button></div>`;
-      const keep=()=>{ MF=Object.assign(MF,{machine_id:val('mM'),date:val('mD'),location:val('mL'),start_meter:val('mS'),end_meter:val('mE'),running_hours:val('mR'),idle_hours:val('mI'),diesel_l:val('mF'),operator:val('mO'),activity:val('mA'),breakdown:!!(B.querySelector('#mB')||{}).checked,breakdown_note:val('mBN'),remarks:val('mRm')}); };
+      const keep=()=>{ MF=Object.assign(MF,{machine_id:val('mM'),date:val('mD'),location:val('mL'),start_meter:val('mS'),end_meter:val('mE'),running_hours:val('mR'),idle_hours:val('mI'),diesel_l:val('mF'),operator:val('mO'),activity:val('mA'),breakdown:!!(B.querySelector('#mB')||{}).checked,breakdown_note:val('mBN'),remarks:val('mRm'),shift_capacity_hours:val('mC'),maintenance_hours:val('mMt'),trips:val('mTp'),breakdown_hours:val('mBH')}); };
       IN.querySelector('#mB').onchange=()=>{ keep(); Mach(); };
       ['mS','mE'].forEach(id=>IN.querySelector('#'+id).oninput=()=>{ const s=parseFloat(val('mS')), e=parseFloat(val('mE')); if(isFinite(s)&&isFinite(e)&&e>=s) IN.querySelector('#mR').value=Math.round((e-s)*100)/100; });
       wirePhotos('MACHINE',()=>{ keep(); Mach(); });
@@ -2025,6 +2212,10 @@ window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); dpcsInsta
   document.body.appendChild(b);
 });
 window.addEventListener('appinstalled',()=>{ const b=document.getElementById('dpcsInstallBtn'); if(b) b.remove(); });
+</script>
+<script>
+/* corporate dashboard bridge: the frame asks the parent; the PIN session never leaves the app */
+window.DPCSControlBridge={ async load(f){ const a=auth(); if(!a) return {ok:false,error:'SIGNIN_REQUIRED'}; return callApi({action:'control_snapshot_v1',token:a.token,kind:(f&&f.kind)||'DPR'}); } };
 </script>
 <script>
 /* ===== v14 app shell: one tab bar for every page ===== */
