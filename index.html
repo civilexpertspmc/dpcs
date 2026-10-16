@@ -325,8 +325,12 @@ function lists(cat,ctx){
     const a = ACTIVITIES.find(x=>x.n===ctx);
     return { base:(a?a.d:[]).concat(GENERIC_DESC), add:((added.descriptions||{})[ctx]||[]) };
   }
+  if(cat==='locations'){ const a=auth(), mine=(a&&a.blocks)||[];
+    if(mine.length && !(a&&a.manager)){ const ok=l=>{ const b=locBlocks(l); return !b.length || b.some(x=>mine.indexOf(x)>=0); };
+      return { base:(BASE[cat]||[]).filter(ok), add:(added[cat]||[]).filter(ok) }; } }
   return { base:BASE[cat]||[], add:added[cat]||[] };
 }
+function locBlocks(l){ const m=String(l).match(/^Tower ([A-C]\d)$/); if(m) return [m[1]]; const r=String(l).match(/\(([A-C]\d(?:\+[A-C]\d)*)\)/); return r?r[1].split('+'):[]; }
 function addMaster(cat,ctx,val){
   if(cat==='descriptions'){ added.descriptions=added.descriptions||{}; (added.descriptions[ctx]=added.descriptions[ctx]||[]).push(val); }
   else (added[cat]=added[cat]||[]).push(val);
@@ -910,7 +914,7 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
     const btn=document.getElementById('lgBtn'); btn.disabled=true; msg.textContent='Signing in…'; msg.style.color='#5B6B7C';
     const j=await callApi({action:'login',mobile:m,pin:p}); btn.disabled=false;
     if(j && j.ok){
-      store.set(K_AUTH,{token:j.token,name:j.name,mobile:j.mobile,role:j.role,expires:j.expires,admin:!!j.admin,manager:!!j.manager,qa:!!j.qa,perms:j.perms||null,pour:('qa' in j)&&(!!j.qa||/engineer|supervisor|manager|admin/i.test(j.role||''))});
+      store.set(K_AUTH,{token:j.token,name:j.name,mobile:j.mobile,role:j.role,expires:j.expires,admin:!!j.admin,manager:!!j.manager,qa:!!j.qa,perms:j.perms||null,blocks:j.blocks||[],pour:('qa' in j)&&(!!j.qa||/engineer|supervisor|manager|admin/i.test(j.role||''))});
       document.getElementById('lgPin').value=''; scrim.style.display='none'; userChip();
       toast('Welcome, '+j.name); if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED')) syncAll(true);
     } else { msg.textContent=ERR[j&&j.error]||('Sign-in failed: '+((j&&j.error)||'unknown')); msg.style.color='#B7443E'; }
@@ -932,6 +936,7 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
         <div class="full"><label class="f">Email</label><input type="text" id="tmEmail" inputmode="email" autocapitalize="off" spellcheck="false" maxlength="80" placeholder="name@example.com"></div>
         <div class="full note" style="margin-top:-4px">Mobile or email is enough — they sign in with either one.</div>
         <div class="full"><label class="f">Role</label><select id="tmRole"></select></div>
+        <div class="full"><label class="f">Assigned towers (leave all off = every tower)</label><div id="tmBlk" class="dkseg"></div></div>
       </div>
       <button class="btn pri" type="button" id="tmAdd" style="width:100%;margin-top:12px;min-height:46px">Add &amp; create PIN</button>
       <p class="note" id="tmScope" style="margin:8px 0 0"></p>
@@ -955,6 +960,9 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
     if(!t){ t=document.createElement('button'); t.id='btnTeam'; t.type='button'; t.className='hbtn'; t.innerHTML='👥<span class="hl"> Team</span>'; t.title='Team';
       row.insertBefore(t,document.getElementById('btnUser')||null); t.onclick=openTeam; }
   };
+  const BLK=['A1','A2','A3','A4','A5','A6','B1','B2','B3','B4','C1']; let addBlk=[];
+  const chips=(sel,attr)=>BLK.map(b=>`<button type="button" ${attr}="${b}" class="${sel.indexOf(b)>=0?'on':''}" style="min-width:44px;flex:none;padding:0 8px;min-height:36px">${b}</button>`).join('');
+  function drawAddBlk(){ const el=document.getElementById('tmBlk'); el.innerHTML=chips(addBlk,'data-ab'); el.querySelectorAll('[data-ab]').forEach(b=>b.onclick=()=>{ const k=b.dataset.ab; addBlk=addBlk.indexOf(k)>=0?addBlk.filter(x=>x!==k):addBlk.concat(k); drawAddBlk(); }); }
   function fillRoles(sel,val){ sel.innerHTML=roles.map(r=>`<option${r===val?' selected':''}>${esc(r)}</option>`).join(''); }
   function showPin(name,mobile,pin,isNew,email){
     const sid=mobile||email;
@@ -987,13 +995,15 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
         <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
           <div><b>${esc(u.name)}</b>${badge(u.role)}${u.self?' <span class="note">(you)</span>':''}<br><span class="note">${esc([u.mobile,u.email].filter(Boolean).join(' · '))} · ${esc(u.role)}</span><br>
             <span style="font-size:11px;font-weight:700;color:${u.active?'#2E7D4F':'#B7443E'}">${u.active?'ACTIVE':'BLOCKED'}</span>
-            <span class="note" style="font-size:11px"> · ${u.pin_pending?'PIN not used yet':(u.last_login?'last sign-in '+esc(u.last_login):'never signed in')}</span></div>
+            <span class="note" style="font-size:11px"> · ${u.pin_pending?'PIN not used yet':(u.last_login?'last sign-in '+esc(u.last_login):'never signed in')}</span><br>
+            <span class="note" style="font-size:11px">Towers: <b>${(u.blocks||[]).length?esc(u.blocks.join(', ')):'All'}</b></span></div>
         </div>
         <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
           ${u.editable?`<select data-role="${esc(u.id)}" style="flex:1;min-width:140px;min-height:38px;padding:4px 10px;font-size:14px">${roles.map(r=>`<option${r===u.role?' selected':''}>${esc(r)}</option>`).join('')}</select>`:(u.can_reset?'':'<span class="note" style="font-size:12px">Managed by Civil Experts</span>')}
           ${u.can_reset?`<button class="btn" type="button" data-reset="${esc(u.id)}" style="flex:none;min-height:38px;padding:4px 12px;font-size:13px">${u.self?'Reset my PIN':'Reset PIN'}</button>`:''}
+          ${!u.editable?'':`<button class="btn" type="button" data-towers="${esc(u.id)}" style="flex:none;min-height:38px;padding:4px 12px;font-size:13px">Towers</button>`}
           ${!u.editable?'':`<button class="btn" type="button" data-toggle="${esc(u.id)}" style="flex:none;min-height:38px;padding:4px 12px;font-size:13px;color:${u.active?'#B7443E':'#2E7D4F'}">${u.active?'Block':'Unblock'}</button>`}
-        </div></div>`).join('') : '<p class="note">No members yet.</p>';
+        </div><div data-tw="${esc(u.id)}"></div></div>`).join('') : '<p class="note">No members yet.</p>';
     const byM=m=>j.users.find(u=>u.id===m); const base=u=>({action:'admin_save',id:u.id,mobile:u.mobile,email:u.email,name:u.name});
     list.querySelectorAll('[data-reset]').forEach(b=>b.onclick=async()=>{ const u=byM(b.dataset.reset);
       if(!confirm('Reset PIN for '+u.name+'? Their old PIN will stop working.')) return;
@@ -1003,11 +1013,16 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
       if(u.active && !confirm('Block '+u.name+'? They will not be able to submit reports.')) return;
       const r=await call(Object.assign(base(u),{role:u.role,active:!u.active}));
       if(r.ok){ toast(u.name+(u.active?' blocked':' unblocked')); load(); } else toast(r.error); });
+    list.querySelectorAll('[data-towers]').forEach(b=>b.onclick=()=>{ const u=byM(b.dataset.towers), box=list.querySelector(`[data-tw="${CSS.escape(u.id)}"]`); let sel=(u.blocks||[]).slice();
+      const draw=()=>{ box.innerHTML=`<div class="dkseg" style="margin-top:8px">${chips(sel,'data-tb')}</div><button class="btn pri" type="button" data-tsave style="width:100%;min-height:38px">Save towers (${sel.length?sel.join(', '):'all towers'})</button>`;
+        box.querySelectorAll('[data-tb]').forEach(c=>c.onclick=()=>{ const k=c.dataset.tb; sel=sel.indexOf(k)>=0?sel.filter(x=>x!==k):sel.concat(k); draw(); });
+        box.querySelector('[data-tsave]').onclick=async()=>{ const r=await call(Object.assign(base(u),{role:u.role,active:u.active,blocks:sel.length?sel:'ALL'})); if(r.ok){ toast('Towers saved'); load(); } else toast(r.error); }; };
+      draw(); });
     list.querySelectorAll('[data-role]').forEach(sel=>sel.onchange=async()=>{ const u=byM(sel.dataset.role);
       const r=await call(Object.assign(base(u),{role:sel.value,active:u.active}));
       if(r.ok){ toast('Role updated'); load(); } else { toast(r.error); load(); } });
   }
-  function openTeam(){ scrim.style.display='block'; res.innerHTML=''; load(); }
+  function openTeam(){ scrim.style.display='block'; res.innerHTML=''; drawAddBlk(); load(); }
   document.getElementById('tmClose').onclick=()=>{ scrim.style.display='none'; };
   document.getElementById('tmRefresh').onclick=load;
   document.getElementById('tmAdd').onclick=async()=>{
@@ -1016,14 +1031,14 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
     if(!name){ toast('Enter the name'); return; }
     if(mobile.length!==10 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ toast('Enter a 10-digit mobile or a valid email'); return; }
     const btn=document.getElementById('tmAdd'); btn.disabled=true;
-    const r=await call({action:'admin_save',name,mobile:mobile.length===10?mobile:'',email,role,active:true}); btn.disabled=false;
+    const r=await call({action:'admin_save',name,mobile:mobile.length===10?mobile:'',email,role,active:true,blocks:addBlk.length?addBlk:'ALL'}); btn.disabled=false; addBlk=[]; drawAddBlk();
     if(!r.ok){ toast(r.error); return; }
     document.getElementById('tmName').value=''; document.getElementById('tmMobile').value=''; document.getElementById('tmEmail').value='';
     if(r.pin) showPin(name,mobile.length===10?mobile:'',r.pin,r.created,email); else toast('Member updated');
     load();
   };
   // refresh role/admin flag for sessions started before this update
-  const a=auth(); if(a) callApi({action:'me',token:a.token}).then(j=>{ if(j&&j.ok){ a.admin=!!j.admin; a.manager=!!j.manager; a.qa=!!j.qa; a.pour=('qa' in j)&&(a.qa||/engineer|supervisor|manager|admin/i.test(j.role||'')); a.role=j.role; a.perms=j.perms||null; store.set(K_AUTH,a); teamBtn(); if(window.ctrlBtn) ctrlBtn(); if(window.pourBtn) pourBtn(); if(window.deskBtn) deskBtn(); } });
+  const a=auth(); if(a) callApi({action:'me',token:a.token}).then(j=>{ if(j&&j.ok){ a.admin=!!j.admin; a.manager=!!j.manager; a.qa=!!j.qa; a.pour=('qa' in j)&&(a.qa||/engineer|supervisor|manager|admin/i.test(j.role||'')); a.role=j.role; a.perms=j.perms||null; a.blocks=j.blocks||[]; store.set(K_AUTH,a); teamBtn(); if(window.ctrlBtn) ctrlBtn(); if(window.pourBtn) pourBtn(); if(window.deskBtn) deskBtn(); } });
   teamBtn();
 })();
 </script>
@@ -1093,6 +1108,8 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
     const j=await call({action:'verify_list'});
     if(!j.ok){ V.innerHTML='<div class="card note">'+esc(ERR(j.error))+'</div>'; return; }
     document.getElementById('ctPend').textContent=j.counts.pending||'';
+    const vb=window.__vBlk||'', blkOk=x=>!vb||String(x.block||'SITE').split('+').indexOf(vb)>=0;
+    const bset=[...new Set(j.pending.map(x=>x.block||'SITE'))].sort();
     const card=(x,pending)=>`<div class="ctrow">
       <div class="cthd"><div><span class="ctblk">${esc(x.block||'SITE')}</span><b>${esc(x.activity)}</b><br>
         <span class="note">${esc(x.location)} · ${esc(x.floor)} · ${esc(x.date)} · ${esc(x.site_engineer)}</span>
@@ -1101,6 +1118,7 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
       <div style="margin-top:6px;font-size:13px">Site reported: <b>${x.qty==null?'<span style="color:#9A6A00">not reported</span>':n(x.qty)+' '+esc(x.unit)}</b> · ${x.manpower||0} Nos
         ${x.status==='VERIFIED'?` · Verified: <b style="color:#2E7D4F">${n(x.verified_qty)} ${esc(x.unit)}</b> by ${esc(String(x.verified_by).split(' (')[0])}`:''}
         ${x.note?`<br><span class="note">Note: ${esc(x.note)}</span>`:''}${(x.photo_ids||[]).length?`<br>${x.photo_ids.map((p,k)=>`<a href="#" data-ev="${esc(p)}">📷 ${k+1}</a>`).join(' ')}`:''}
+        ${pending&&x.duplicate_of?`<div class="ctwarn">⚠ Same activity, location and floor also reported on this date by ${esc(x.duplicate_of)} — verify the quantity only once; return the duplicate.</div>`:''}
         ${pending&&x.wbs_match!=='MATCHED'?`<div class="ctwarn">Not mapped to a WBS line (${esc(x.wbs_match)}) — return it so the site corrects activity/floor/unit.</div>`:''}</div>
       ${pending?`<div class="ctin">
         <input type="number" inputmode="decimal" step="any" min="0" placeholder="Verified qty${x.unit?' ('+esc(x.unit)+')':''}" data-q="${esc(x.entry_id)}" value="${x.qty==null?'':esc(x.qty)}" style="flex:1;min-width:120px"${x.wbs_match!=='MATCHED'?' disabled':''}>
@@ -1109,7 +1127,8 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
         <button class="btn" type="button" data-ret="${esc(x.entry_id)}" style="flex:none;min-height:40px;color:#B7443E">Return</button></div>`:''}</div>`;
     V.innerHTML=`<div class="card"><h2>Waiting for verification (${j.counts.pending})</h2>
       <p class="note" style="margin-top:-4px">Only verified quantities count in progress and reports. Measure on site, enter the verified quantity and press Verify.</p>
-      ${j.pending.length?j.pending.map(x=>card(x,true)).join(''):'<p class="note">Nothing waiting. 👍</p>'}</div>
+      <div class="dkseg" style="margin-bottom:6px">${['',...bset].map(b=>`<button type="button" data-vb="${b}" class="${vb===b?'on':''}" style="min-width:52px;flex:none;padding:0 10px">${b||'All towers'}</button>`).join('')}</div>
+      ${j.pending.filter(blkOk).length?j.pending.filter(blkOk).map(x=>card(x,true)).join(''):'<p class="note">Nothing waiting. 👍</p>'}</div>
       <div class="card"><h2>Recent decisions</h2>${j.recent.length?j.recent.map(x=>card(x,false)).join(''):'<p class="note">None yet.</p>'}</div>`;
     const decide=async(id,decision)=>{ const q=V.querySelector(`[data-q="${CSS.escape(id)}"]`), nt=V.querySelector(`[data-n="${CSS.escape(id)}"]`);
       if(decision==='RETURN'&&!nt.value.trim()){ toast('Write the reason for returning'); nt.focus(); return; }
@@ -1117,6 +1136,7 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
       const r=await call({action:'verify_decide',entry_id:id,decision,verified_qty:q?q.value:'',note:nt.value.trim(),expected_status:'PENDING'});
       if(r.ok){ toast(decision==='VERIFY'?'Verified':'Returned to site'); loadV(); } else toast(ERR(r.error)); };
     V.querySelectorAll('[data-ev]').forEach(a=>a.onclick=e=>{ e.preventDefault(); dpcsPhoto.view(a.dataset.ev); });
+    V.querySelectorAll('[data-vb]').forEach(b=>b.onclick=()=>{ window.__vBlk=b.dataset.vb; loadV(); });
     V.querySelectorAll('[data-ok]').forEach(b=>b.onclick=()=>decide(b.dataset.ok,'VERIFY'));
     V.querySelectorAll('[data-ret]').forEach(b=>b.onclick=()=>decide(b.dataset.ret,'RETURN'));
   }
@@ -1436,7 +1456,9 @@ window.dpcsPhoto={
         if(!r.ok) return toast(ERR(r.error)); toast('Saved '+r.txn_id+' — waiting for PM'); SF={type:SF.type}; photos.store=[]; sub.st='mine'; Store(); };
     } else {
       IN.innerHTML='<div class="card note">Loading…</div>'; const r=await call({action:'store_list'}); if(!r.ok){ IN.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return; }
-      if(sub.st==='stock') IN.innerHTML=`<div class="card"><h2>Verified stock</h2><p class="note" style="margin-top:-4px">From PM-verified ledger entries only.</p>
+      const P=r.plan, planT=P&&P.rows&&P.rows.length?`<div class="card"><h2>Plan vs received · ${esc(P.month)}</h2><p class="note" style="margin-top:-4px">${esc(P.basis)}. Received = PM-verified receipts this month.</p>
+        <table class="dktbl"><tr><th>Material</th><th class="r">Planned</th><th class="r">Received</th><th class="r">Issued</th><th class="r">Gap</th></tr>${P.rows.map(x=>`<tr><td>${esc(x.plan_group)}<div class="note">${esc(x.unit)}${/WORKING/i.test(x.kind)?' · reusable working stock':''}</div></td><td class="r">${n(x.planned)}</td><td class="r">${n(x.received)}</td><td class="r">${n(x.issued)}</td><td class="r"><b>${n(x.receipt_gap)}</b></td></tr>`).join('')}</table></div>`:'';
+      if(sub.st==='stock') IN.innerHTML=planT+`<div class="card"><h2>Verified stock</h2><p class="note" style="margin-top:-4px">From PM-verified ledger entries only.</p>
         ${r.stock.length?`<table class="dktbl"><tr><th>Material</th><th class="r">In</th><th class="r">Out</th><th class="r">Balance</th><th class="r">Pending</th></tr>${r.stock.map(s=>`<tr><td>${esc(s.material)}<div class="note">${esc(s.unit)}</div></td><td class="r">${n(s.received+s.returned)}</td><td class="r">${n(s.issued)}</td><td class="r"><b>${n(s.balance)}</b></td><td class="r">${s.pending||''}</td></tr>`).join('')}</table>`:'<p class="note">No verified movements yet.</p>'}</div>`;
       else IN.innerHTML=`<div class="card"><h2>My entries</h2>${r.mine.length?r.mine.map(t=>`<div class="dkrow"><div class="t"><div><b>${esc(t.type)} · ${esc(t.material)}</b><div class="s">${esc(t.date)} · ${n(t.type==='RECEIPT'?t.accepted_qty:t.qty)} ${esc(t.unit)} · ${esc(t.party)} ${esc(t.location||'')} ${evl(t.photo_ids)}</div>
         ${t.review_note?`<div class="s">PM: ${esc(t.review_note)}</div>`:''}</div>${st(t.status)}</div></div>`).join(''):'<p class="note">None yet.</p>'}</div>`;
