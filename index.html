@@ -899,8 +899,8 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
     let b=document.getElementById('btnUser');
     if(!b){ b=document.createElement('button'); b.id='btnUser'; b.type='button'; b.className='hbtn'; row.appendChild(b);
       b.onclick=()=>confirmBox('Signed in',`<p style="margin:0">${esc(auth()?auth().name:'')}<br><span class="note">${esc(auth()?auth().mobile:'')} · ${esc(auth()?auth().role:'')}</span></p>`,
-        [['Close',''],['Sign out','',()=>{ store.del(K_AUTH); b.remove(); const tb=document.getElementById('btnTeam'); if(tb) tb.remove(); const tc=document.getElementById('btnCtrl'); if(tc) tc.remove(); const tq=document.getElementById('btnPour'); if(tq) tq.remove(); showLogin('Signed out.'); }]]); }
-    b.innerHTML='👤<span class="hl"> '+esc(String(a.name).split(' ')[0])+'</span>'; b.title=a.name; if(window.teamBtn) teamBtn(); if(window.ctrlBtn) ctrlBtn(); if(window.pourBtn) pourBtn();
+        [['Close',''],['Sign out','',()=>{ store.del(K_AUTH); b.remove(); const tb=document.getElementById('btnTeam'); if(tb) tb.remove(); const tc=document.getElementById('btnCtrl'); if(tc) tc.remove(); const td=document.getElementById('btnDesk'); if(td) td.remove(); const tq=document.getElementById('btnPour'); if(tq) tq.remove(); showLogin('Signed out.'); }]]); }
+    b.innerHTML='👤<span class="hl"> '+esc(String(a.name).split(' ')[0])+'</span>'; b.title=a.name; if(window.teamBtn) teamBtn(); if(window.ctrlBtn) ctrlBtn(); if(window.pourBtn) pourBtn(); if(window.deskBtn) deskBtn();
   }
   f.onsubmit=async e=>{
     e.preventDefault();
@@ -910,7 +910,7 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
     const btn=document.getElementById('lgBtn'); btn.disabled=true; msg.textContent='Signing in…'; msg.style.color='#5B6B7C';
     const j=await callApi({action:'login',mobile:m,pin:p}); btn.disabled=false;
     if(j && j.ok){
-      store.set(K_AUTH,{token:j.token,name:j.name,mobile:j.mobile,role:j.role,expires:j.expires,admin:!!j.admin,manager:!!j.manager,qa:!!j.qa,pour:('qa' in j)&&(!!j.qa||/engineer|supervisor|manager|admin/i.test(j.role||''))});
+      store.set(K_AUTH,{token:j.token,name:j.name,mobile:j.mobile,role:j.role,expires:j.expires,admin:!!j.admin,manager:!!j.manager,qa:!!j.qa,perms:j.perms||null,pour:('qa' in j)&&(!!j.qa||/engineer|supervisor|manager|admin/i.test(j.role||''))});
       document.getElementById('lgPin').value=''; scrim.style.display='none'; userChip();
       toast('Welcome, '+j.name); if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED')) syncAll(true);
     } else { msg.textContent=ERR[j&&j.error]||('Sign-in failed: '+((j&&j.error)||'unknown')); msg.style.color='#B7443E'; }
@@ -1023,7 +1023,7 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
     load();
   };
   // refresh role/admin flag for sessions started before this update
-  const a=auth(); if(a) callApi({action:'me',token:a.token}).then(j=>{ if(j&&j.ok){ a.admin=!!j.admin; a.manager=!!j.manager; a.qa=!!j.qa; a.pour=('qa' in j)&&(a.qa||/engineer|supervisor|manager|admin/i.test(j.role||'')); a.role=j.role; store.set(K_AUTH,a); teamBtn(); if(window.ctrlBtn) ctrlBtn(); if(window.pourBtn) pourBtn(); } });
+  const a=auth(); if(a) callApi({action:'me',token:a.token}).then(j=>{ if(j&&j.ok){ a.admin=!!j.admin; a.manager=!!j.manager; a.qa=!!j.qa; a.pour=('qa' in j)&&(a.qa||/engineer|supervisor|manager|admin/i.test(j.role||'')); a.role=j.role; a.perms=j.perms||null; store.set(K_AUTH,a); teamBtn(); if(window.ctrlBtn) ctrlBtn(); if(window.pourBtn) pourBtn(); if(window.deskBtn) deskBtn(); } });
   teamBtn();
 })();
 </script>
@@ -1336,6 +1336,295 @@ window.dpcsPhoto={
     box.querySelectorAll('[data-pw]').forEach(b=>b.onclick=()=>dec(b,'REWORK'));
   };
   pourBtn();
+})();
+</script>
+<div id="deskScrim" style="position:fixed;inset:0;z-index:150;background:#F5F7FB;display:none;overflow:auto">
+  <div style="position:sticky;top:0;background:#052585;color:#fff;border-bottom:3px solid #FECA08;z-index:2">
+    <div style="padding:12px 16px 4px;display:flex;align-items:center;gap:10px">
+      <div style="flex:1"><b style="font-size:16px">My desk</b><div id="dkWho" style="font-size:11px;opacity:.85"></div></div>
+      <button type="button" id="dkClose" style="background:#fff;color:#052585;border:0;border-radius:8px;padding:8px 14px;font-weight:700">Close</button>
+    </div>
+    <div id="dkTabs" style="display:flex;gap:2px;padding:0 8px;overflow-x:auto"></div>
+  </div>
+  <div id="dkBody" style="max-width:760px;margin:0 auto;padding:12px 16px 40px"></div>
+</div>
+<style>
+.dkt{flex:1;min-width:84px;background:transparent;color:#C9D3EA;border:0;border-bottom:3px solid transparent;padding:10px 4px;font-weight:700;font-size:13px;white-space:nowrap}
+.dkt.on{color:#fff;border-bottom-color:#FECA08}
+.dkseg{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.dkseg button{flex:1;min-width:90px;min-height:42px;border:2px solid #DCE3EC;background:#fff;border-radius:10px;font-weight:700;color:#061A59;font-size:13px}
+.dkseg button.on{border-color:#052585;background:#EEF2FB}
+.dkrow{border-top:1px solid #DCE3EC;padding:10px 0}.dkrow:first-child{border-top:0}
+.dkrow .t{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.dkrow .s{font-size:12px;color:#5B6B7C;margin-top:2px}
+.dkst{font-size:11px;font-weight:800;border-radius:10px;padding:2px 8px;white-space:nowrap}
+.dkst.ok{background:#E7F3EC;color:#2E7D4F}.dkst.wt{background:#FFF6D6;color:#9A6A00}.dkst.rw{background:#FBEAEA;color:#B7443E}.dkst.in{background:#EEF2FB;color:#052585}
+.dkact{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.dkact input,.dkact textarea{flex:1 1 100%}.dkact .btn{min-height:40px;font-size:13px}
+.dktbl{width:100%;border-collapse:collapse;font-size:13px}.dktbl th{text-align:left;font-size:11px;color:#5B6B7C;border-bottom:2px solid #DCE3EC;padding:6px 4px}.dktbl td{border-bottom:1px solid #EEF1F6;padding:6px 4px}.dktbl .r{text-align:right}
+</style>
+<script>
+(function(){
+  const scrim=document.getElementById('deskScrim'), B=document.getElementById('dkBody'), TB=document.getElementById('dkTabs');
+  const call=b=>{ const a=auth(); return a?callApi(Object.assign({token:a.token},b)):Promise.resolve({ok:false,error:'SIGNIN_REQUIRED'}); };
+  const ERR=e=>({UNKNOWN_ACTION:'The server is not updated yet.',OFFLINE:'No internet.',FORBIDDEN:'Your role cannot do this.'}[e]||e);
+  const n=(v,d)=>v==null||v===''?'—':(Math.round(Number(v)*Math.pow(10,d==null?2:d))/Math.pow(10,d==null?2:d)).toLocaleString('en-IN');
+  const today=()=>{ const d=new Date(Date.now()+330*60000); return d.toISOString().slice(0,10); };
+  const st=s=>{ const c=/VERIFIED|APPROVED|PAID|CLOSED|PASS/.test(s)?'ok':/RETURNED|REJECTED|FAIL/.test(s)?'rw':/PENDING|SUBMITTED|PROPOSED|OPEN|AWAITING/.test(s)?'wt':'in'; return `<span class="dkst ${c}">${esc(s)}</span>`; };
+  const opt=(arr,v,ph,val,lab)=>'<option value="">'+ph+'</option>'+arr.map(x=>{ const k=val?val(x):x, l=lab?lab(x):x; return `<option value="${esc(k)}"${String(k)===String(v)?' selected':''}>${esc(l)}</option>`; }).join('');
+  let META=null, tab='', sub={};
+  const busy=(btn,on)=>{ if(btn){ btn.disabled=on; } };
+  const photos={};   // key -> [{id,thumb}]
+  const phRow=key=>`<div class="phrow">${(photos[key]||[]).map((p,k)=>`<span class="ph"><img src="${p.thumb}" alt="Photo"><button class="x" type="button" data-dkdel="${key}" data-k="${k}">✕</button></span>`).join('')}<button class="add-row ph-add" type="button" data-dkph="${key}">📷 Add photo</button></div>`;
+  function wirePhotos(ref,redraw){ B.querySelectorAll('[data-dkph]').forEach(b=>b.onclick=async()=>{ const p=await dpcsPhoto.take(ref,b.dataset.dkph); if(p){ (photos[b.dataset.dkph]=photos[b.dataset.dkph]||[]).push(p); redraw(); } });
+    B.querySelectorAll('[data-dkdel]').forEach(b=>b.onclick=()=>{ photos[b.dataset.dkdel].splice(+b.dataset.k,1); redraw(); });
+    B.querySelectorAll('[data-ev]').forEach(a=>a.onclick=e=>{ e.preventDefault(); dpcsPhoto.view(a.dataset.ev); }); }
+  const val=id=>{ const el=B.querySelector('#'+id); return el?el.value.trim():''; };
+  const evl=ids=>(ids||[]).map(id=>`<a href="#" data-ev="${esc(id)}">📷</a>`).join(' ');
+
+  const TABS=[['store','📦 Store',p=>p.store],['mach','🚜 Machines',p=>p.mach],['qa','🧪 QA/QC',p=>p.qa],['acc','💰 Accounts',p=>p.accounts],['appr','✅ Approvals',p=>p.pm||p.admin]];
+  window.deskBtn=function(){
+    const a=auth(), row=document.querySelector('.top .row'); let t=document.getElementById('btnDesk');
+    const p=a&&a.perms; const any=p&&TABS.some(x=>x[2](p));
+    if(!a||!row||!any){ if(t) t.remove(); return; }
+    if(!t){ t=document.createElement('button'); t.id='btnDesk'; t.type='button'; t.className='hbtn'; t.innerHTML='🗂<span class="hl"> Desk</span>'; t.title='My desk';
+      row.insertBefore(t,document.getElementById('btnPour')||document.getElementById('btnCtrl')||document.getElementById('btnTeam')||document.getElementById('btnUser')||null); t.onclick=()=>open(); }
+    if(!p.site && !window.__deskAuto){ window.__deskAuto=1; open(); }   // store / P&M / accounts land on their desk
+  };
+  async function open(t){ scrim.style.display='block'; const a=auth(); document.getElementById('dkWho').textContent=(a?a.name+' · '+a.role:'')+' · Subhadra Towers';
+    B.innerHTML='<div class="card note">Loading…</div>';
+    const m=await call({action:'ops_meta'}); if(!m.ok){ B.innerHTML='<div class="card note">'+esc(ERR(m.error))+'</div>'; return; }
+    META=m; const tabs=TABS.filter(x=>x[2](m.perms));
+    TB.innerHTML=tabs.map(x=>`<button type="button" class="dkt" data-t="${x[0]}">${x[1]}</button>`).join('');
+    TB.querySelectorAll('.dkt').forEach(b=>b.onclick=()=>show(b.dataset.t));
+    show(t||(tabs.find(x=>x[0]===tab)||tabs[0])[0]); }
+  document.getElementById('dkClose').onclick=()=>{ scrim.style.display='none'; };
+  function show(t){ tab=t; TB.querySelectorAll('.dkt').forEach(b=>b.classList.toggle('on',b.dataset.t===t)); ({store:Store,mach:Mach,qa:QA,acc:Acc,appr:Appr})[t](); }
+  const seg=(key,items)=>{ sub[key]=sub[key]||items[0][0]; return `<div class="dkseg">${items.map(i=>`<button type="button" data-seg="${key}" data-v="${i[0]}" class="${sub[key]===i[0]?'on':''}">${i[1]}</button>`).join('')}</div>`; };
+  const wireSeg=fn=>B.querySelectorAll('[data-seg]').forEach(b=>b.onclick=()=>{ sub[b.dataset.seg]=b.dataset.v; fn(); });
+  const locs=()=>META.locations.map(l=>l.name);
+
+  /* ---------------- STORE ---------------- */
+  let SF={type:'RECEIPT'};
+  async function Store(){
+    const typ=SF.type, mats=META.materials, mat=mats.find(x=>x.id===SF.material_id);
+    const party={RECEIPT:'Supplier',ISSUE:'Issued to (contractor / team)',RETURN:'Returned by',ADJUSTMENT:'Party (optional)'}[typ];
+    B.innerHTML=`${seg('st',[['new','New entry'],['stock','Stock'],['mine','My entries']])}<div id="dkIn"></div>`; wireSeg(Store);
+    const IN=B.querySelector('#dkIn');
+    if(sub.st==='new'){
+      IN.innerHTML=`<div class="card"><h2>Store transaction</h2>
+        <div class="dkseg">${['RECEIPT','ISSUE','RETURN','ADJUSTMENT'].map(t=>`<button type="button" data-ty="${t}" class="${typ===t?'on':''}">${{RECEIPT:'⬇ Receipt',ISSUE:'⬆ Issue',RETURN:'↩ Return',ADJUSTMENT:'± Adjust'}[t]}</button>`).join('')}</div>
+        <div class="grid">
+          <div class="full"><label class="f">Material <span class="req">*</span></label><select id="sMat">${opt(mats,SF.material_id,'Select material…',x=>x.id,x=>x.name+' ('+x.unit+')')}</select>
+            <button type="button" class="add-row" id="sNewMat" style="margin-top:6px;min-height:36px">+ Add new material</button></div>
+          <div><label class="f">Date <span class="req">*</span></label><input type="date" id="sDate" max="${today()}" value="${SF.date||today()}"></div>
+          <div><label class="f">${typ==='RECEIPT'?'Received qty':'Quantity'} <span class="req">*</span> ${mat?'('+esc(mat.unit)+')':''}</label><input type="number" inputmode="decimal" id="sQty" value="${SF.qty||''}"></div>
+          ${typ==='RECEIPT'?`<div><label class="f">Accepted qty (after inspection)</label><input type="number" inputmode="decimal" id="sAcc" value="${SF.accepted_qty||''}" placeholder="= received"></div>`:''}
+          ${typ==='ADJUSTMENT'?`<div><label class="f">Direction <span class="req">*</span></label><select id="sDir"><option value="PLUS">+ Add to stock</option><option value="MINUS"${SF.direction==='MINUS'?' selected':''}>− Reduce stock</option></select></div>`:''}
+          <div class="full"><label class="f">${party}${typ==='ADJUSTMENT'?'':' <span class="req">*</span>'}</label><input type="text" id="sParty" list="dkCons" value="${esc(SF.party||'')}"><datalist id="dkCons">${META.contractors.map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div>
+          ${typ==='ISSUE'||typ==='RETURN'?`<div class="full"><label class="f">Location / workfront${typ==='ISSUE'?' <span class="req">*</span>':''}</label><select id="sLoc">${opt(locs(),SF.location,'Select…')}</select></div>`:''}
+          <div class="full"><label class="f">${typ==='RECEIPT'?'Challan / invoice no.':'Indent / slip / PO no.'}${typ==='RECEIPT'?' <span class="req">*</span>':''}</label><input type="text" id="sRef" value="${esc(SF.reference||'')}"></div>
+          <div class="full"><label class="f">Remarks${typ==='ADJUSTMENT'?' (reason) <span class="req">*</span>':''}</label><textarea id="sRem">${esc(SF.remarks||'')}</textarea></div>
+        </div>${phRow('store')}
+        <p class="note">Stock changes only after the PM verifies this entry. Issued ≠ consumed.</p>
+        <button class="btn pri" type="button" id="sGo" style="width:100%;margin-top:10px">Submit for PM verification</button></div>`;
+      const keep=()=>{ SF=Object.assign(SF,{material_id:val('sMat'),date:val('sDate'),qty:val('sQty'),accepted_qty:val('sAcc'),party:val('sParty'),location:val('sLoc'),reference:val('sRef'),remarks:val('sRem'),direction:val('sDir')}); };
+      IN.querySelectorAll('[data-ty]').forEach(b=>b.onclick=()=>{ keep(); SF.type=b.dataset.ty; Store(); });
+      IN.querySelector('#sMat').onchange=()=>{ keep(); Store(); };
+      wirePhotos('STORE',()=>{ keep(); Store(); });
+      IN.querySelector('#sNewMat').onclick=async()=>{ const name=prompt('New material name (e.g. TMT bar 16 mm)'); if(!name) return; const unit=prompt('Unit (e.g. Bag, MT, Cum, Nos, Kg, Ltr)'); if(!unit) return;
+        const r=await call({action:'mat_add',name,unit}); if(!r.ok) return toast(ERR(r.error)); keep(); SF.material_id=r.id; open('store'); toast(r.duplicate?'Material already exists — selected':'Material added'); };
+      IN.querySelector('#sGo').onclick=async e=>{ keep(); busy(e.target,true);
+        const r=await call(Object.assign({action:'store_submit',photos:(photos.store||[]).map(p=>p.id)},SF)); busy(e.target,false);
+        if(!r.ok) return toast(ERR(r.error)); toast('Saved '+r.txn_id+' — waiting for PM'); SF={type:SF.type}; photos.store=[]; sub.st='mine'; Store(); };
+    } else {
+      IN.innerHTML='<div class="card note">Loading…</div>'; const r=await call({action:'store_list'}); if(!r.ok){ IN.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return; }
+      if(sub.st==='stock') IN.innerHTML=`<div class="card"><h2>Verified stock</h2><p class="note" style="margin-top:-4px">From PM-verified ledger entries only.</p>
+        ${r.stock.length?`<table class="dktbl"><tr><th>Material</th><th class="r">In</th><th class="r">Out</th><th class="r">Balance</th><th class="r">Pending</th></tr>${r.stock.map(s=>`<tr><td>${esc(s.material)}<div class="note">${esc(s.unit)}</div></td><td class="r">${n(s.received+s.returned)}</td><td class="r">${n(s.issued)}</td><td class="r"><b>${n(s.balance)}</b></td><td class="r">${s.pending||''}</td></tr>`).join('')}</table>`:'<p class="note">No verified movements yet.</p>'}</div>`;
+      else IN.innerHTML=`<div class="card"><h2>My entries</h2>${r.mine.length?r.mine.map(t=>`<div class="dkrow"><div class="t"><div><b>${esc(t.type)} · ${esc(t.material)}</b><div class="s">${esc(t.date)} · ${n(t.type==='RECEIPT'?t.accepted_qty:t.qty)} ${esc(t.unit)} · ${esc(t.party)} ${esc(t.location||'')} ${evl(t.photo_ids)}</div>
+        ${t.review_note?`<div class="s">PM: ${esc(t.review_note)}</div>`:''}</div>${st(t.status)}</div></div>`).join(''):'<p class="note">None yet.</p>'}</div>`;
+      wirePhotos('STORE',Store);
+    }
+  }
+
+  /* ---------------- MACHINES ---------------- */
+  let MF={};
+  async function Mach(){
+    B.innerHTML=`${seg('mc',[['new','Daily log'],['mine','My logs'],['add','Add machine']])}<div id="dkIn"></div>`; wireSeg(Mach);
+    const IN=B.querySelector('#dkIn');
+    if(sub.mc==='new'){
+      IN.innerHTML=`<div class="card"><h2>Machine daily log</h2><div class="grid">
+        <div class="full"><label class="f">Machine <span class="req">*</span></label><select id="mM">${opt(META.machines,MF.machine_id,'Select machine…',x=>x.id,x=>x.name+(x.agency?' · '+x.agency:'')+' ('+x.ownership+')')}</select></div>
+        <div><label class="f">Date <span class="req">*</span></label><input type="date" id="mD" max="${today()}" value="${MF.date||today()}"></div>
+        <div><label class="f">Location <span class="req">*</span></label><select id="mL">${opt(locs(),MF.location,'Select…')}</select></div>
+        <div><label class="f">Start meter (HMR)</label><input type="number" inputmode="decimal" id="mS" value="${MF.start_meter||''}"></div>
+        <div><label class="f">End meter (HMR)</label><input type="number" inputmode="decimal" id="mE" value="${MF.end_meter||''}"></div>
+        <div><label class="f">Running hours</label><input type="number" inputmode="decimal" id="mR" value="${MF.running_hours||''}" placeholder="auto from meter"></div>
+        <div><label class="f">Idle hours</label><input type="number" inputmode="decimal" id="mI" value="${MF.idle_hours||''}"></div>
+        <div><label class="f">Diesel issued (L)</label><input type="number" inputmode="decimal" id="mF" value="${MF.diesel_l||''}"></div>
+        <div><label class="f">Operator</label><input type="text" id="mO" value="${esc(MF.operator||'')}"></div>
+        <div class="full"><label class="f">Activity / work done</label><input type="text" id="mA" value="${esc(MF.activity||'')}"></div>
+        <div class="full"><label class="f"><input type="checkbox" id="mB" ${MF.breakdown?'checked':''} style="width:auto;min-height:0;margin-right:6px">Breakdown today</label>
+          ${MF.breakdown?'<textarea id="mBN" placeholder="What failed? Since when? (required)">'+esc(MF.breakdown_note||'')+'</textarea>':''}</div>
+        <div class="full"><label class="f">Remarks</label><textarea id="mRm">${esc(MF.remarks||'')}</textarea></div></div>${phRow('mach')}
+        <p class="note">One log per machine per day. PM verifies before it counts for hire billing.</p>
+        <button class="btn pri" type="button" id="mGo" style="width:100%;margin-top:10px">Submit for PM verification</button></div>`;
+      const keep=()=>{ MF=Object.assign(MF,{machine_id:val('mM'),date:val('mD'),location:val('mL'),start_meter:val('mS'),end_meter:val('mE'),running_hours:val('mR'),idle_hours:val('mI'),diesel_l:val('mF'),operator:val('mO'),activity:val('mA'),breakdown:!!(B.querySelector('#mB')||{}).checked,breakdown_note:val('mBN'),remarks:val('mRm')}); };
+      IN.querySelector('#mB').onchange=()=>{ keep(); Mach(); };
+      ['mS','mE'].forEach(id=>IN.querySelector('#'+id).oninput=()=>{ const s=parseFloat(val('mS')), e=parseFloat(val('mE')); if(isFinite(s)&&isFinite(e)&&e>=s) IN.querySelector('#mR').value=Math.round((e-s)*100)/100; });
+      wirePhotos('MACHINE',()=>{ keep(); Mach(); });
+      IN.querySelector('#mGo').onclick=async e=>{ keep(); busy(e.target,true); const r=await call(Object.assign({action:'mach_submit',photos:(photos.mach||[]).map(p=>p.id)},MF)); busy(e.target,false);
+        if(!r.ok) return toast(ERR(r.error)); toast('Saved '+r.log_id); MF={}; photos.mach=[]; sub.mc='mine'; Mach(); };
+    } else if(sub.mc==='add'){
+      IN.innerHTML=`<div class="card"><h2>Add machine</h2><div class="grid">
+        <div class="full"><label class="f">Machine name / reg. no. <span class="req">*</span></label><input type="text" id="aN" placeholder="e.g. JCB 3DX OD-02-AB-1234"></div>
+        <div><label class="f">Type</label><input type="text" id="aT" placeholder="Excavator, Crane…"></div>
+        <div><label class="f">Ownership</label><select id="aO"><option>HIRED</option><option>OWN</option></select></div>
+        <div><label class="f">Hire basis</label><select id="aB"><option>HOUR</option><option>DAY</option><option>MONTH</option><option>TRIP</option></select></div>
+        <div><label class="f">Agency / owner</label><input type="text" id="aA"></div></div>
+        <p class="note">Hire rates are not entered here — Accounts records them against the work order.</p>
+        <button class="btn pri" type="button" id="aGo" style="width:100%;margin-top:10px">Add machine</button></div>`;
+      IN.querySelector('#aGo').onclick=async()=>{ const r=await call({action:'mach_add',name:val('aN'),type:val('aT'),ownership:val('aO'),hire_basis:val('aB'),agency:val('aA')});
+        if(!r.ok) return toast(ERR(r.error)); toast(r.duplicate?'Already in the list':'Machine added'); MF.machine_id=r.id; sub.mc='new'; open('mach'); };
+    } else {
+      IN.innerHTML='<div class="card note">Loading…</div>'; const r=await call({action:'mach_list'}); if(!r.ok){ IN.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return; }
+      IN.innerHTML=`<div class="card"><h2>My machine logs</h2>${r.mine.length?r.mine.map(t=>`<div class="dkrow"><div class="t"><div><b>${esc(t.machine)}</b><div class="s">${esc(t.date)} · ${esc(t.location)} · run ${n(t.running_hours,1)} h · idle ${n(t.idle_hours,1)} h · diesel ${n(t.diesel_l,0)} L ${t.breakdown?'· <b style="color:#B7443E">breakdown</b>':''} ${evl(t.photo_ids)}</div>
+        ${t.review_note?`<div class="s">PM: ${esc(t.review_note)}</div>`:''}</div>${st(t.status)}</div></div>`).join(''):'<p class="note">None yet.</p>'}</div>`; wirePhotos('MACHINE',Mach);
+    }
+  }
+
+  /* ---------------- QA / QC ---------------- */
+  let CF={}, NF={};
+  async function QA(){
+    B.innerHTML=`${seg('qa',[['cubes','Cube register'],['ncr','NCR'],['pour','Pour cards']])}<div id="dkIn"></div>`; wireSeg(QA);
+    const IN=B.querySelector('#dkIn');
+    if(sub.qa==='pour'){ if(window.pourReview) return pourReview(IN); IN.innerHTML='<div class="card note">Pour review not available.</div>'; return; }
+    if(sub.qa==='cubes'){
+      const r=await call({action:'cube_list'}); if(!r.ok){ IN.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return; }
+      const due=new Set(r.due);
+      IN.innerHTML=`<div class="card"><h2>New cube set (sampling at pour)</h2><div class="grid">
+        <div><label class="f">Casting date <span class="req">*</span></label><input type="date" id="cD" max="${today()}" value="${CF.cast_date||today()}"></div>
+        <div><label class="f">Grade <span class="req">*</span></label><select id="cG">${opt(META.grades,CF.grade,'Grade…')}</select></div>
+        <div><label class="f">Location <span class="req">*</span></label><select id="cL">${opt(locs(),CF.location,'Select…')}</select></div>
+        <div><label class="f">Element / member</label><input type="text" id="cE" value="${esc(CF.element||'')}" placeholder="e.g. Raft pour 2, C12–C18"></div>
+        <div><label class="f">Pour card no. (if any)</label><input type="text" id="cP" value="${esc(CF.pour_card_id||'')}" placeholder="PC-…"></div>
+        <div><label class="f">Cast qty (m³)</label><input type="number" inputmode="decimal" id="cQ" value="${CF.cast_qty_m3||''}"></div>
+        <div><label class="f">Cubes for 7-day</label><input type="number" id="c7" value="${CF.cubes_7||3}"></div>
+        <div><label class="f">Cubes for 28-day</label><input type="number" id="c28" value="${CF.cubes_28||3}"></div></div>
+        <button class="btn pri" type="button" id="cGo" style="width:100%;margin-top:10px">Register cube set</button></div>
+        <div class="card"><h2>Cube sets</h2><p class="note" style="margin-top:-4px">28-day pass = sample average ≥ fck − 4 N/mm² (M20+) per IS 456 Table 11; a fail raises an NCR automatically.</p>
+        ${r.sets.length?r.sets.map(c=>`<div class="dkrow"><div class="t"><div><b>${esc(c.grade)} · ${esc(c.location)}</b> <span class="note">${esc(c.set_id)}</span><div class="s">${esc(c.element||'')} cast ${esc(c.cast_date)} · 7d due ${esc(c.due_7)} · 28d due ${esc(c.due_28)}</div>
+          <div class="s">7d: ${c.r7_avg!=null?n(c.r7_avg,1)+' N/mm² ('+Math.round(c.r7_avg/c.fck*100)+'% of fck)':'—'} · 28d: ${c.r28_avg!=null?n(c.r28_avg,1)+' N/mm²':'—'} ${c.ncr_id?'· '+esc(c.ncr_id):''}</div></div>${st(c.result)}</div>
+          ${(!c.r7||!c.r28)?`<div class="dkact"><input type="text" data-cv="${c.set_id}" placeholder="${due.has(c.set_id)?'⚠ due: ':''}strengths N/mm², e.g. 31.2, 32.0, 30.6"><input type="date" data-cd="${c.set_id}" max="${today()}" value="${today()}">
+            ${!c.r7?`<button class="btn" type="button" data-cr="${c.set_id}" data-age="7">Save 7-day</button>`:''}${!c.r28?`<button class="btn pri" type="button" data-cr="${c.set_id}" data-age="28">Save 28-day</button>`:''}</div>`:''}</div>`).join(''):'<p class="note">No cube sets yet.</p>'}</div>`;
+      IN.querySelector('#cGo').onclick=async e=>{ CF={cast_date:val('cD'),grade:val('cG'),location:val('cL'),element:val('cE'),pour_card_id:val('cP'),cast_qty_m3:val('cQ'),cubes_7:val('c7'),cubes_28:val('c28')};
+        busy(e.target,true); const x=await call(Object.assign({action:'cube_submit'},CF)); busy(e.target,false); if(!x.ok) return toast(ERR(x.error)); toast('Registered · 28-day due '+x.due_28); CF={}; QA(); };
+      IN.querySelectorAll('[data-cr]').forEach(b=>b.onclick=async()=>{ const id=b.dataset.cr; const x=await call({action:'cube_result',set_id:id,age:+b.dataset.age,values:IN.querySelector(`[data-cv="${id}"]`).value,test_date:IN.querySelector(`[data-cd="${id}"]`).value});
+        if(!x.ok) return toast(ERR(x.error)); toast(x.age===7?'7-day avg '+x.avg+' ('+x.pct_fck+'% fck)':'28-day: '+x.result+(x.ncr_id?' · NCR '+x.ncr_id+' raised':'')); QA(); });
+    } else {
+      const r=await call({action:'ncr_list'}); if(!r.ok){ IN.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return; }
+      const draw=()=>{ IN.innerHTML=`<div class="card"><h2>Raise NCR</h2><div class="grid">
+        <div><label class="f">Category <span class="req">*</span></label><select id="nC">${opt(META.ncr_categories,NF.category,'Select…')}</select></div>
+        <div><label class="f">Severity <span class="req">*</span></label><select id="nS">${opt(['Low','Medium','High','Critical'],NF.severity,'Select…')}</select></div>
+        <div><label class="f">Location <span class="req">*</span></label><select id="nL">${opt(locs(),NF.location,'Select…')}</select></div>
+        <div><label class="f">Rectify by</label><input type="date" id="nD" value="${NF.due_date||''}"></div>
+        <div class="full"><label class="f">Responsible (contractor / team)</label><input type="text" id="nR" list="dkCons2" value="${esc(NF.responsible||'')}"><datalist id="dkCons2">${META.contractors.map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div>
+        <div class="full"><label class="f">Non-conformance <span class="req">*</span></label><textarea id="nT">${esc(NF.description||'')}</textarea></div></div>${phRow('ncr')}
+        <button class="btn pri" type="button" id="nGo" style="width:100%;margin-top:10px">Raise NCR</button></div>
+        <div class="card"><h2>Open NCRs (${r.open.length})</h2>${r.open.length?r.open.map(x=>`<div class="dkrow"><div class="t"><div><b>${esc(x.severity)} · ${esc(x.category)}</b> <span class="note">${esc(x.ncr_id)}</span><div class="s">${esc(x.location)} · ${esc(x.description)}</div>
+          <div class="s">${esc(x.responsible||'')} · due ${esc(x.due_date)} ${x.overdue?'<b style="color:#B7443E">OVERDUE</b>':''} ${evl(x.photo_ids)}</div></div>${st('OPEN')}</div>
+          <div class="dkact"><textarea data-nn="${x.ncr_id}" placeholder="How it was rectified (required)"></textarea>${phRow('ncrc_'+x.ncr_id)}<button class="btn pri" type="button" data-nc="${x.ncr_id}">Close NCR</button></div></div>`).join(''):'<p class="note">No open NCRs.</p>'}</div>
+        <div class="card"><h2>Recently closed</h2>${r.closed.length?r.closed.map(x=>`<div class="dkrow"><div class="t"><div><b>${esc(x.category)}</b> <span class="note">${esc(x.ncr_id)}</span><div class="s">${esc(x.location)} · ${esc(x.closure_note)} · ${esc(x.closed_at)}</div></div>${st('CLOSED')}</div></div>`).join(''):'<p class="note">None.</p>'}</div>`;
+        const keep=()=>{ NF={category:val('nC'),severity:val('nS'),location:val('nL'),due_date:val('nD'),responsible:val('nR'),description:val('nT')}; };
+        wirePhotos('NCR',()=>{ keep(); draw(); });
+        IN.querySelector('#nGo').onclick=async e=>{ keep(); busy(e.target,true); const x=await call(Object.assign({action:'ncr_submit',photos:(photos.ncr||[]).map(p=>p.id)},NF)); busy(e.target,false);
+          if(!x.ok) return toast(ERR(x.error)); toast('NCR '+x.ncr_id+' raised'); NF={}; photos.ncr=[]; QA(); };
+        IN.querySelectorAll('[data-nc]').forEach(b=>b.onclick=async()=>{ const id=b.dataset.nc; const x=await call({action:'ncr_close',ncr_id:id,note:IN.querySelector(`[data-nn="${id}"]`).value,photos:(photos['ncrc_'+id]||[]).map(p=>p.id)});
+          if(!x.ok) return toast(ERR(x.error)); toast('NCR closed'); QA(); }); };
+      draw();
+    }
+  }
+
+  /* ---------------- ACCOUNTS ---------------- */
+  let BF={deductions:[{label:'Retention',pct:5}]}, PV=null, RF={basis:'ITEM'};
+  async function Acc(){
+    B.innerHTML=`${seg('ac',[['bill','New RA bill'],['bills','Bills'],['rates','Rates']])}<div id="dkIn"></div>`; wireSeg(Acc);
+    const IN=B.querySelector('#dkIn');
+    if(sub.ac==='bill'){
+      const lines=PV?PV.lines.map(l=>`<tr><td><input type="checkbox" data-inc="${esc(l.line_key)}" ${PV.excluded.indexOf(l.line_key)<0?'checked':''} style="width:auto;min-height:0"></td><td>${esc(l.item)}<div class="note">${l.basis==='HAJIRI'?'Hajiri (site-reported man-days)':'PM-verified qty'} · ${l.refs} entr${l.refs>1?'ies':'y'}</div></td>
+        <td class="r">${n(l.qty)} ${esc(l.unit)}</td><td class="r">${l.rate==null?'<b style="color:#B7443E">no approved rate</b>':n(l.rate)}</td><td class="r">${l.amount==null?'—':n(l.amount)}</td></tr>`).join(''):'';
+      IN.innerHTML=`<div class="card"><h2>RA bill from verified work</h2><div class="grid">
+        <div class="full"><label class="f">Contractor <span class="req">*</span></label><select id="bC">${opt(META.contractors,BF.contractor,'Select…')}</select></div>
+        <div><label class="f">From <span class="req">*</span></label><input type="date" id="bS" value="${BF.period_start||''}"></div>
+        <div><label class="f">To <span class="req">*</span></label><input type="date" id="bE" max="${today()}" value="${BF.period_end||''}"></div></div>
+        <button class="btn" type="button" id="bPv" style="width:100%;margin-top:10px">Calculate lines</button></div>
+        ${PV?`<div class="card"><h2>Lines</h2>${PV.lines.length?`<table class="dktbl"><tr><th></th><th>Item</th><th class="r">Qty</th><th class="r">Rate</th><th class="r">Amount ₹</th></tr>${lines}</table>`:'<p class="note">No unbilled verified work for this contractor in the period.</p>'}
+          ${PV.skipped_already_billed?`<p class="note">${PV.skipped_already_billed} item(s) already in another bill were left out.</p>`:''}
+          ${PV.materials_issued.length?`<p class="note">Materials issued to this contractor in the period (for recovery, if applicable): ${PV.materials_issued.map(m=>esc(m.material)+' '+n(m.qty)+' '+esc(m.unit)).join(', ')}</p>`:''}
+          <h2 style="margin-top:12px">Deductions</h2>${BF.deductions.map((d,i)=>`<div class="grid" style="margin-bottom:6px"><div><input type="text" data-dl="${i}" value="${esc(d.label)}" placeholder="Retention / TDS / advance…"></div>
+            <div style="display:flex;gap:6px"><input type="number" inputmode="decimal" data-dp="${i}" value="${d.pct==null?'':d.pct}" placeholder="%"><input type="number" inputmode="decimal" data-da="${i}" value="${d.amount==null||d.pct!=null?'':d.amount}" placeholder="or ₹"></div></div>`).join('')}
+          <button type="button" class="add-row" id="bAddD" style="min-height:36px">+ Add deduction</button>
+          <table class="dktbl" style="margin-top:10px"><tr><td>Gross</td><td class="r"><b>₹ ${n(PV.gross)}</b></td></tr><tr><td>Deductions</td><td class="r">₹ ${n(PV.deduction_total)}</td></tr><tr><td><b>Net payable</b></td><td class="r"><b>₹ ${n(PV.net)}</b></td></tr></table>
+          ${PV.rate_missing?`<div class="ctwarn">${PV.rate_missing} included line(s) have no approved rate — untick them or get the rate approved (Rates tab).</div>`:''}
+          <textarea id="bN" placeholder="Note for PM / Admin (optional)" style="margin-top:8px">${esc(BF.note||'')}</textarea>
+          <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" type="button" id="bRe">Recalculate</button><button class="btn pri" type="button" id="bGo">Submit to PM</button></div></div>`:''}`;
+      const keep=()=>{ BF.contractor=val('bC'); BF.period_start=val('bS'); BF.period_end=val('bE'); BF.note=val('bN');
+        BF.deductions=BF.deductions.map((d,i)=>{ if(!B.querySelector(`[data-dp="${i}"]`)) return d; const p=(B.querySelector(`[data-dp="${i}"]`)||{}).value, a=(B.querySelector(`[data-da="${i}"]`)||{}).value; return {label:(B.querySelector(`[data-dl="${i}"]`)||{value:d.label}).value, pct:p===''||p==null?null:+p, amount:a===''||a==null?null:+a}; });
+        if(PV) PV.excluded=[...B.querySelectorAll('[data-inc]')].filter(c=>!c.checked).map(c=>c.dataset.inc); };
+      const pv=async()=>{ keep(); const r=await call({action:'bill_preview',contractor:BF.contractor,period_start:BF.period_start,period_end:BF.period_end,exclude:PV?PV.excluded:[],deductions:BF.deductions});
+        if(!r.ok) return toast(ERR(r.error)); PV=r; Acc(); };
+      IN.querySelector('#bPv').onclick=()=>{ PV=null; pv(); };
+      if(PV){ IN.querySelector('#bRe').onclick=pv; IN.querySelector('#bAddD').onclick=()=>{ keep(); BF.deductions.push({label:'',pct:null,amount:null}); Acc(); };
+        IN.querySelectorAll('[data-inc]').forEach(c=>c.onchange=pv);
+        IN.querySelector('#bGo').onclick=async e=>{ keep(); if(!confirm('Submit this bill to the PM for certification?')) return; busy(e.target,true);
+          const r=await call({action:'bill_submit',contractor:BF.contractor,period_start:BF.period_start,period_end:BF.period_end,exclude:PV.excluded,deductions:BF.deductions,note:BF.note}); busy(e.target,false);
+          if(!r.ok) return toast(ERR(r.error)); toast('Bill '+r.bill_id+' submitted · net ₹'+n(r.net)); PV=null; BF={deductions:[{label:'Retention',pct:5}]}; sub.ac='bills'; Acc(); }; }
+    } else if(sub.ac==='bills'){
+      const r=await call({action:'bill_list'}); if(!r.ok){ IN.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return; }
+      IN.innerHTML=`<div class="card"><h2>Bills</h2>${r.bills.length?r.bills.map(b=>`<div class="dkrow"><div class="t"><div><b>${esc(b.bill_id)}</b> · ${esc(b.contractor)}<div class="s">${esc(b.period_start)} – ${esc(b.period_end)} · gross ₹${n(b.gross)} · net <b>₹${n(b.net)}</b></div>
+        <div class="s">${esc(b.history||'')}</div>${b.paid_ref?`<div class="s">Paid ${esc(b.paid_date)} · ${esc(b.paid_ref)}</div>`:''}</div>${st(b.status)}</div>
+        ${b.status==='APPROVED'?`<div class="dkact"><input type="text" data-pr="${b.bill_id}" placeholder="UTR / cheque no."><input type="date" data-pd="${b.bill_id}" max="${today()}" value="${today()}"><button class="btn pri" type="button" data-pay="${b.bill_id}">Mark paid</button></div>`:''}</div>`).join(''):'<p class="note">No bills yet.</p>'}</div>`;
+      IN.querySelectorAll('[data-pay]').forEach(b=>b.onclick=async()=>{ const id=b.dataset.pay; const x=await call({action:'bill_pay',bill_id:id,paid_ref:IN.querySelector(`[data-pr="${id}"]`).value,paid_date:IN.querySelector(`[data-pd="${id}"]`).value});
+        if(!x.ok) return toast(ERR(x.error)); toast('Marked paid'); Acc(); });
+    } else {
+      const r=await call({action:'rate_list'}); if(!r.ok){ IN.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return; }
+      IN.innerHTML=`<div class="card"><h2>Propose contract rate</h2><p class="note" style="margin-top:-4px">From the signed work order. Admin / Super Admin approves before billing can use it.</p>
+        <div class="dkseg">${[['ITEM','Item rate (per unit)'],['HAJIRI','Hajiri (per man-day)']].map(x=>`<button type="button" data-bs="${x[0]}" class="${RF.basis===x[0]?'on':''}">${x[1]}</button>`).join('')}</div><div class="grid">
+        <div class="full"><label class="f">Contractor <span class="req">*</span></label><input type="text" id="rC" list="dkCons3" value="${esc(RF.contractor||'')}"><datalist id="dkCons3">${META.contractors.map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div>
+        <div class="full"><label class="f">${RF.basis==='ITEM'?'Activity (as in site report)':'Trade'} <span class="req">*</span></label><input type="text" id="rI" list="dkItems" value="${esc(RF.item||'')}"><datalist id="dkItems">${(RF.basis==='ITEM'?META.activities:META.trades).map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div>
+        ${RF.basis==='ITEM'?`<div><label class="f">Unit <span class="req">*</span></label><input type="text" id="rU" value="${esc(RF.unit||'')}" placeholder="m³, MT, m²…"></div>`:''}
+        <div><label class="f">Rate ₹ <span class="req">*</span></label><input type="number" inputmode="decimal" id="rR" value="${RF.rate||''}"></div>
+        <div><label class="f">Effective from</label><input type="date" id="rE" value="${RF.effective_from||''}"></div>
+        <div class="full"><label class="f">Work order / agreement ref. <span class="req">*</span></label><input type="text" id="rW" value="${esc(RF.reference||'')}"></div></div>
+        <button class="btn pri" type="button" id="rGo" style="width:100%;margin-top:10px">Propose rate</button></div>
+        <div class="card"><h2>Rates</h2>${r.rates.length?`<table class="dktbl"><tr><th>Contractor / item</th><th class="r">Rate</th><th>Status</th></tr>${r.rates.map(x=>`<tr><td>${esc(x.contractor)}<div class="note">${esc(x.basis)} · ${esc(x.item)} · ${esc(x.unit)} · from ${esc(x.effective_from)}</div></td><td class="r">₹ ${n(x.rate)}</td><td>${st(x.status)}</td></tr>`).join('')}</table>`:'<p class="note">No rates yet.</p>'}</div>`;
+      const keep=()=>{ RF=Object.assign(RF,{contractor:val('rC'),item:val('rI'),unit:val('rU'),rate:val('rR'),effective_from:val('rE'),reference:val('rW')}); };
+      IN.querySelectorAll('[data-bs]').forEach(b=>b.onclick=()=>{ keep(); RF.basis=b.dataset.bs; Acc(); });
+      IN.querySelector('#rGo').onclick=async e=>{ keep(); busy(e.target,true); const x=await call(Object.assign({action:'rate_propose'},RF)); busy(e.target,false); if(!x.ok) return toast(ERR(x.error)); toast('Rate proposed — waiting for Admin'); RF={basis:RF.basis}; Acc(); };
+    }
+  }
+
+  /* ---------------- APPROVALS (PM / Admin) ---------------- */
+  async function Appr(){
+    B.innerHTML='<div class="card note">Loading…</div>';
+    const r=await call({action:'approvals'}); if(!r.ok){ B.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return; }
+    const q=r.queues, box=(type,id,extra)=>`<div class="dkact"><input type="text" data-an="${esc(id)}" placeholder="Note (required to return)">${extra||''}
+      <button class="btn" type="button" data-ar="${esc(id)}" data-ty="${type}">Return</button><button class="btn pri" type="button" data-aa="${esc(id)}" data-ty="${type}">${{STORE:'Verify',MACHINE:'Verify',RATE:'Approve rate',BILL:'Approve'}[type]}</button></div>`;
+    const sec=(t,items,fn)=>`<div class="card"><h2>${t} (${items.length})</h2>${items.length?items.map(fn).join(''):'<p class="note">Nothing waiting.</p>'}</div>`;
+    const billView=b=>`<div class="dkrow"><div class="t"><div><b>${esc(b.bill_id)}</b> · ${esc(b.contractor)}<div class="s">${esc(b.period_start)} – ${esc(b.period_end)} · by ${esc(String(b.created_by).split(' (')[0])}${b.certified_by?' · certified by '+esc(String(b.certified_by).split(' (')[0]):''}</div>
+      <table class="dktbl" style="margin-top:4px">${b.lines.map(l=>`<tr><td>${esc(l.item)}</td><td class="r">${n(l.qty)} ${esc(l.unit)}</td><td class="r">@ ${n(l.rate)}</td><td class="r">${n(l.amount)}</td></tr>`).join('')}
+      <tr><td colspan="3">Gross / deductions</td><td class="r">${n(b.gross)} / ${n(b.deduction_total)}</td></tr><tr><td colspan="3"><b>Net</b></td><td class="r"><b>₹ ${n(b.net)}</b></td></tr></table>${b.note?`<div class="s">${esc(b.note)}</div>`:''}</div>${st(b.status)}</div>${box('BILL',b.bill_id)}</div>`;
+    B.innerHTML=`<p class="note">Maker–checker: you cannot verify or approve your own entries.</p>
+      ${sec('📦 Store entries to verify',q.store,t=>`<div class="dkrow"><div class="t"><div><b>${esc(t.type)} · ${esc(t.material)}</b><div class="s">${esc(t.date)} · ${n(t.type==='RECEIPT'?t.accepted_qty:t.qty)} ${esc(t.unit)}${t.rejected_qty?' ('+n(t.rejected_qty)+' rejected)':''} · ${esc(t.party)} ${esc(t.location||'')} · ref ${esc(t.reference||'—')} ${evl(t.photo_ids)}</div><div class="s">by ${esc(String(t.entered_by).split(' (')[0])}${t.remarks?' · '+esc(t.remarks):''}</div></div>${st(t.status)}</div>${box('STORE',t.txn_id)}</div>`)}
+      ${sec('🚜 Machine logs to verify',q.machine,t=>`<div class="dkrow"><div class="t"><div><b>${esc(t.machine)}</b><div class="s">${esc(t.date)} · ${esc(t.location)} · HMR ${esc(t.start_meter)}→${esc(t.end_meter)} · run ${n(t.running_hours,1)} h · idle ${n(t.idle_hours,1)} h · diesel ${n(t.diesel_l,0)} L ${t.breakdown?'· breakdown: '+esc(t.breakdown_note):''} ${evl(t.photo_ids)}</div><div class="s">by ${esc(String(t.entered_by).split(' (')[0])}</div></div>${st(t.status)}</div>${box('MACHINE',t.log_id)}</div>`)}
+      ${sec('💰 Bills to certify (quantities)',q.bill_certify,billView)}
+      ${q.bill_approve.length||q.rate.length||(auth()||{}).admin?sec('💰 Bills for final approval',q.bill_approve,billView)+sec('📑 Contract rates to approve',q.rate,x=>`<div class="dkrow"><div class="t"><div><b>${esc(x.contractor)}</b><div class="s">${esc(x.basis)} · ${esc(x.item)} · ${esc(x.unit)} · ₹ ${n(x.rate)} from ${esc(x.effective_from)} · ${esc(x.note)}</div><div class="s">proposed by ${esc(String(x.proposed_by).split(' (')[0])}</div></div>${st(x.status)}</div>${box('RATE',x.rate_id)}</div>`):''}`;
+    wirePhotos('OTHER',Appr);
+    const dec=async(b,decision)=>{ const id=b.dataset.aa||b.dataset.ar, note=B.querySelector(`[data-an="${CSS.escape(id)}"]`).value.trim();
+      if(decision==='RETURN'&&!note) return toast('Write the reason for returning');
+      b.disabled=true; const x=await call({action:'approve',type:b.dataset.ty,id,decision,note}); if(!x.ok){ b.disabled=false; return toast(ERR(x.error)); }
+      toast(id+' → '+x.status); Appr(); };
+    B.querySelectorAll('[data-aa]').forEach(b=>b.onclick=()=>dec(b,'APPROVE'));
+    B.querySelectorAll('[data-ar]').forEach(b=>b.onclick=()=>dec(b,'RETURN'));
+  }
+  deskBtn();
 })();
 </script>
 <script>
