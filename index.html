@@ -123,21 +123,56 @@ select:focus,input:focus,textarea:focus{outline:2px solid var(--azure);outline-o
   .card{border:0;padding:0}
   .ritem{break-inside:avoid}
 }
+
+/* ===== v14 app shell: compact app bar + labelled tab bar on every page ===== */
+.top{background:#fff;color:var(--navy);padding:0!important;position:sticky;top:0;z-index:170;box-shadow:0 2px 10px rgba(6,26,89,.14)}
+.appbar{display:flex;align-items:center;gap:10px;max-width:960px;margin:0 auto;padding:7px 14px}
+.appbar .brandlogo{width:36px;height:36px}
+.appbar .brandtxt b{font-size:19px;letter-spacing:2.5px;font-weight:900;color:var(--azure);line-height:1.05}
+.appbar .brandtxt span{font-size:11.5px;color:var(--muted);opacity:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.appbar .hbtn{background:#EEF2FB;border:1px solid #D5DEF2;color:var(--azure);border-radius:10px;min-width:38px;height:38px;padding:0 9px!important;font-size:16px;font-weight:700}
+.appbar #btnUser{border-radius:19px;padding:0 12px 0 8px!important;font-size:13px;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis}
+.appbar #btnUser .hl{display:inline!important}
+@media(max-width:400px){.appbar #btnUser .hl{display:none!important}.appbar .saved{display:none}}
+.tabs{background:var(--azure);border-bottom:3px solid var(--gold)}
+.tabs .row{display:flex!important;gap:0!important;max-width:960px;margin:0 auto;padding:0 4px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.tabs .row::-webkit-scrollbar{display:none}
+.tabs .hbtn{position:relative;flex:1 0 auto;min-width:62px;background:transparent!important;border:0!important;border-radius:0!important;color:#BFCBEF!important;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 8px 5px!important;font-size:18px!important;line-height:1.1;border-bottom:3px solid transparent!important;margin-bottom:-3px;font-weight:700}
+.tabs .hbtn .hl{display:block!important;font-size:10.5px;letter-spacing:.3px;white-space:nowrap}
+.tabs .hbtn.on{color:#fff!important;border-bottom-color:var(--gold)!important;background:rgba(255,255,255,.07)!important}
+.tabs .hbtn .nb{position:absolute;top:3px;right:calc(50% - 22px);font-style:normal;font-size:10px;font-weight:800;background:var(--gold);color:var(--navy);border-radius:8px;padding:0 5px;min-width:16px}
+.tabs .hbtn .nb:empty{display:none}
+.pagehead{margin:2px 0 12px}.pagehead h1{margin:0;font-size:18px;color:var(--navy);letter-spacing:.2px}.pagehead small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+#teamScrim,#ctrlScrim,#pourScrim,#deskScrim,#taskScrim{top:var(--navh,96px)!important}
+#teamScrim>div:first-child,#ctrlScrim>div:first-child,#deskScrim>div:first-child,.pghead{position:sticky;top:0;z-index:2;background:#fff!important;color:var(--navy)!important;border-bottom:1px solid var(--line)!important;box-shadow:0 2px 6px rgba(6,26,89,.06)}
+#teamScrim>div:first-child b,#ctrlScrim>div:first-child b,#deskScrim>div:first-child b,.pghead b{font-size:17px!important;color:var(--navy)}
+#teamScrim>div:first-child div[id],#ctrlScrim>div:first-child div[id],#deskScrim>div:first-child div[id],.pgsub{color:var(--muted)!important;opacity:1!important;font-size:12px!important}
+#tmClose,#ctClose,#dkClose{display:none!important}
+.pgrow{display:flex;align-items:center;gap:10px;max-width:760px;margin:0 auto;padding:12px 16px 6px}
+.pgtabs,.cttabs,#dkTabs{display:flex!important;gap:6px!important;max-width:760px;margin:0 auto;padding:4px 12px 10px!important;overflow-x:auto;scrollbar-width:none}
+.pgt,.ctt,.dkt{flex:1 0 auto!important;min-width:auto!important;background:#EEF2FB!important;color:var(--azure)!important;border:1px solid #D5DEF2!important;border-radius:20px!important;padding:7px 13px!important;font-weight:700!important;font-size:13px!important;white-space:nowrap}
+.pgt.on,.ctt.on,.dkt.on{background:var(--azure)!important;border-color:var(--azure)!important;color:#fff!important}
+.pgbody{max-width:760px;margin:0 auto;padding:12px 16px 60px}
+.scrim{z-index:180!important}.toast{z-index:190!important}
+body.ovl .bar{display:none}
+@media print{.top{display:none!important}}
 </style>
 </head>
 <body>
 
 <header class="top">
-  <div class="row">
+  <div class="appbar">
     <img class="brandlogo" src="data:image/jpeg;base64,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" alt="Civil Experts">
-    <div class="brandtxt"><b>CIVIL EXPERTS</b><span>DPCS · Digital Project Control System</span></div>
+    <div class="brandtxt"><b>DPCS</b><span id="topSub">Civil Experts · DPCS</span></div>
     <span class="saved" id="savedState"></span>
-    <button class="hbtn" id="btnHistory" type="button" title="Reports">📋<span class="hl"> Reports</span></button>
+    <button class="hbtn ic" id="btnHistory" type="button" title="Submitted reports" aria-label="Submitted reports">📋</button>
+    <span id="userSlot"></span>
   </div>
-  <div class="subbar"><h1>Site Engineering Field Report Card<small id="topSub">Civil Experts · DPCS</small></h1></div>
+  <nav class="tabs" aria-label="Sections"><div class="row" id="navRow"><button class="hbtn on" id="btnHome" type="button">📝<span class="hl"> Report</span></button></div></nav>
 </header>
 
 <main>
+  <div class="pagehead"><h1>Site Engineering Field Report Card</h1><small>Daily progress · manpower · machinery · tomorrow plan · hindrance</small></div>
   <!-- ============ FORM VIEW ============ -->
   <div id="formView">
     <section class="card">
@@ -393,7 +428,7 @@ function entryHTML(e,i){
   <section class="card act${e._c?' collapsed':''}" id="act-${i}">
     <div class="act-head" data-act="toggle" data-i="${i}">
       <span class="num">${i+1}</span>
-      <div class="ah-txt"><b>${esc(e.activity||'New activity')}</b><small id="sub-${i}">${esc(subline(e))}</small></div>
+      <div class="ah-txt"><b>${e.assignment_id?'🎯 ':''}${esc(e.activity||'New activity')}</b><small id="sub-${i}">${esc(subline(e))}</small></div>
       <button class="icon" type="button" data-act="dup" data-i="${i}" aria-label="Copy activity" title="Copy">⧉</button>
       <button class="icon del" type="button" data-act="del" data-i="${i}" aria-label="Delete activity" title="Delete">✕</button>
     </div>
@@ -695,7 +730,7 @@ function buildRecord(){
         team_type:m.agency==='In-house team'?'IN-HOUSE':'CONTRACTOR', contractor_or_team:m.agency,
         engagement_basis:m.basis, trade:m.trade, headcount:+m.count})),
       machinery:e.machOn?e.machinery.map(m=>({machine_type:m.type,working_location:m.location,hours:num(m.hours)})):[],
-      remarks:e.remarks||'', photos:(e.photos||[]).map(p=>p.id)
+      remarks:e.remarks||'', photos:(e.photos||[]).map(p=>p.id), assignment_id:e.assignment_id||''
     })),
     tomorrow_plan:S.tomorrow.filter(t=>t.location&&t.activity).map((t,k)=>({plan_no:k+1,location:t.location,activity:t.activity,target_qty:num(t.qty),unit:num(t.qty)!=null?t.unit:''})),
     attention:S.attention.filter(a=>a.category&&a.text.trim()).map((a,k)=>({item_no:k+1,category:a.category,severity:a.severity,location:a.location||'',description:a.text.trim(),photos:(a.photos||[]).map(p=>p.id)})),
@@ -903,8 +938,8 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
     let b=document.getElementById('btnUser');
     if(!b){ b=document.createElement('button'); b.id='btnUser'; b.type='button'; b.className='hbtn'; row.appendChild(b);
       b.onclick=()=>confirmBox('Signed in',`<p style="margin:0">${esc(auth()?auth().name:'')}<br><span class="note">${esc(auth()?auth().mobile:'')} · ${esc(auth()?auth().role:'')}</span></p>`,
-        [['Close',''],['Sign out','',()=>{ store.del(K_AUTH); b.remove(); const tb=document.getElementById('btnTeam'); if(tb) tb.remove(); const tc=document.getElementById('btnCtrl'); if(tc) tc.remove(); const td=document.getElementById('btnDesk'); if(td) td.remove(); const tq=document.getElementById('btnPour'); if(tq) tq.remove(); showLogin('Signed out.'); }]]); }
-    b.innerHTML='👤<span class="hl"> '+esc(String(a.name).split(' ')[0])+'</span>'; b.title=a.name; if(window.teamBtn) teamBtn(); if(window.ctrlBtn) ctrlBtn(); if(window.pourBtn) pourBtn(); if(window.deskBtn) deskBtn();
+        [['Close',''],['Sign out','',()=>{ store.del(K_AUTH); b.remove(); const tb=document.getElementById('btnTeam'); if(tb) tb.remove(); const tc=document.getElementById('btnCtrl'); if(tc) tc.remove(); const td=document.getElementById('btnDesk'); if(td) td.remove(); const tq=document.getElementById('btnPour'); if(tq) tq.remove(); const tk=document.getElementById('btnTasks'); if(tk) tk.remove(); ['taskScrim','pourScrim','deskScrim','ctrlScrim','teamScrim'].forEach(i=>{ const x=document.getElementById(i); if(x) x.style.display='none'; }); showLogin('Signed out.'); }]]); }
+    b.innerHTML='👤<span class="hl"> '+esc(String(a.name).split(' ')[0])+'</span>'; b.title=a.name; if(window.teamBtn) teamBtn(); if(window.ctrlBtn) ctrlBtn(); if(window.pourBtn) pourBtn(); if(window.deskBtn) deskBtn(); if(window.taskBtn) taskBtn();
   }
   f.onsubmit=async e=>{
     e.preventDefault();
@@ -1200,31 +1235,74 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
   }
 })();
 </script>
-<div id="pourScrim" style="position:fixed;inset:0;z-index:150;background:#F5F7FB;display:none;overflow:auto">
-  <div style="position:sticky;top:0;background:#052585;color:#fff;border-bottom:3px solid #FECA08;padding:12px 16px;display:flex;align-items:center;gap:10px;z-index:2">
-    <div style="flex:1"><b style="font-size:16px">Pour card &amp; checklist</b><div style="font-size:11px;opacity:.85">Permit to pour · QA / PM approval</div></div>
-    <button type="button" id="pcClose" style="background:#fff;color:#052585;border:0;border-radius:8px;padding:8px 14px;font-weight:700">Close</button>
+<div id="pourScrim" class="pg" style="position:fixed;inset:0;z-index:150;background:#F5F7FB;display:none;overflow:auto">
+  <div class="pghead">
+    <div class="pgrow"><div style="flex:1;min-width:0"><b>QC checklists &amp; pour cards</b><div class="pgsub">Subhadra Towers · 11 cards · checklist → permit to pour → pour record → QA close</div></div></div>
+    <div class="pgtabs" id="qcTabs"></div>
   </div>
-  <div style="max-width:760px;margin:0 auto;padding:12px 16px 40px">
-    <div id="pcForm"></div>
-    <div class="card"><h2 style="display:flex;justify-content:space-between;align-items:center">My pour cards <button type="button" class="btn" id="pcRefresh" style="flex:none;min-height:34px;padding:4px 12px;font-size:12px">Refresh</button></h2><div id="pcMine" class="note">Loading…</div></div>
-  </div>
+  <div class="pgbody"><div id="qcBody"></div></div>
 </div>
+<div id="qcPrint"></div>
 <style>
-.pc-kinds{display:flex;gap:6px;flex-wrap:wrap}.pc-kinds button{flex:1;min-width:100px;min-height:44px;border:2px solid #DCE3EC;background:#fff;border-radius:10px;font-weight:700;color:#061A59}
-.pc-kinds button.on{border-color:#052585;background:#EEF2FB}
-.chk{border-top:1px solid #DCE3EC;padding:10px 0}.chk:first-child{border-top:0}
-.chk .q{font-size:14px;color:#182634}.chk .q b{color:#052585;margin-right:4px}.chk .crit{font-size:10px;font-weight:800;color:#9A6A00;margin-left:4px}
-.yn{display:flex;gap:6px;margin-top:8px}.yn button{flex:1;min-height:42px;border:2px solid #DCE3EC;background:#fff;border-radius:10px;font-weight:800;font-size:14px;color:#5B6B7C}
-.yn button.on.y{border-color:#2E7D4F;background:#E7F3EC;color:#2E7D4F}.yn button.on.n{border-color:#B7443E;background:#FBEAEA;color:#B7443E}.yn button.on.na{border-color:#9A6A00;background:#FFF6D6;color:#9A6A00}
-.phrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}.ph{position:relative;width:64px;height:64px}.ph img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid #DCE3EC}
+.qc-fam{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}@media(max-width:480px){.qc-fam{grid-template-columns:repeat(2,1fr)}}
+.qc-fam button{min-height:46px;border:1.5px solid #D5DEF2;background:#fff;border-radius:10px;font-weight:800;color:#061A59;font-size:13px}
+.qc-fam button.on{border-color:#052585;background:#052585;color:#fff}
+.qc-kinds{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.qc-kinds button{display:flex;align-items:center;gap:10px;text-align:left;min-height:50px;border:1.5px solid #DCE3EC;background:#fff;border-radius:10px;padding:8px 12px;color:#182634;font-size:14px}
+.qc-kinds button.on{border-color:#052585;box-shadow:0 0 0 2px #EEF2FB inset;background:#F7F9FE}
+.qc-kinds button b{flex:1}.qc-kinds .n{font-size:11px;color:#5B6B7C;white-space:nowrap}
+.qbadge{font-size:10px;font-weight:800;letter-spacing:.5px;border-radius:4px;padding:3px 7px;white-space:nowrap}
+.qbadge.cl{background:#EEF2FB;color:#052585}.qbadge.pc{background:#FECA08;color:#061A59}
+.qc-sheet{background:#fff;border:1px solid #C9D3E6;border-radius:12px;overflow:hidden;margin-bottom:12px;box-shadow:0 1px 3px rgba(6,26,89,.06)}
+.qc-top{background:#061A59;color:#fff;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:3px solid #FECA08}
+.qc-top .p{font-size:10px;letter-spacing:1.4px;opacity:.8;text-transform:uppercase}.qc-top h3{margin:3px 0 0;font-size:17px;letter-spacing:.4px;text-transform:uppercase}
+.qc-meta{display:grid;grid-template-columns:1fr 1fr}.qc-meta div{padding:7px 12px;border-top:1px solid #EEF1F6;font-size:12.5px;font-weight:600;color:#182634}
+.qc-meta div:nth-child(odd){border-right:1px solid #EEF1F6}.qc-meta span{display:block;font-size:9.5px;font-weight:700;color:#5B6B7C;text-transform:uppercase;letter-spacing:.5px}
+.qc-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 12px 14px;border-top:1px solid #DCE3EC;background:#FBFCFE}
+@media(max-width:420px){.qc-fields{grid-template-columns:1fr}}
+.qc-fields .star{color:#B7443E}
+.qc-h{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#EEF2FB;border-top:1px solid #DCE3EC;font-size:10.5px;font-weight:800;color:#5B6B7C;letter-spacing:.5px;text-transform:uppercase}
+.qc-sec{padding:8px 12px;background:#F4F6FA;border-top:1px solid #DCE3EC;font-weight:800;color:#052585;font-size:11.5px;letter-spacing:.5px;text-transform:uppercase}
+.qc-row{display:grid;grid-template-columns:26px 1fr auto;gap:4px 8px;padding:10px 12px;border-top:1px solid #EEF1F6;align-items:start}
+.qc-row .no{font-weight:800;color:#052585;font-size:13px;padding-top:2px}.qc-row .t{font-size:14px;line-height:1.4;color:#182634}
+.qc-row .cm{grid-column:2/4}.qc-row .cm input{min-height:40px;font-size:14px;padding:8px 10px}
+.qc-row.bad{background:#FFF7F6}.qc-row.na{background:#FFFCF0}
+.qc-yn{display:flex;gap:4px}.qc-yn button{width:42px;height:38px;border:1.5px solid #CBD5E3;border-radius:8px;background:#fff;font-weight:800;font-size:13px;color:#5B6B7C;padding:0}
+.qc-yn button.on.y{border-color:#2E7D4F;background:#2E7D4F;color:#fff}.qc-yn button.on.n{border-color:#B7443E;background:#B7443E;color:#fff}.qc-yn button.on.na{border-color:#9A6A00;background:#9A6A00;color:#fff}
+.qc-all{font-size:12px;border:1px solid #BFE0CC;background:#E7F3EC;color:#2E7D4F;border-radius:8px;padding:5px 10px;font-weight:700}
+.qc-pre{margin:0 12px 12px;border:1px solid #DCE3EC;border-radius:10px;overflow:hidden}.qc-pre div{display:flex;gap:8px;align-items:center;padding:8px 10px;border-top:1px solid #EEF1F6;font-size:13px}
+.qc-pre div:first-child{border-top:0}.qc-pre .ok{color:#2E7D4F;font-weight:800}.qc-pre .no{color:#B7443E;font-weight:800}.qc-pre button{margin-left:auto;font-size:12px;border:1px solid #052585;color:#052585;background:#fff;border-radius:8px;padding:5px 9px;font-weight:700}
+.qc-foot{padding:12px;border-top:1px solid #DCE3EC}
+.qc-res{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;padding:10px 12px;border-top:1px solid #DCE3EC}.qc-res span{white-space:nowrap}.qc-res .on{font-weight:800;color:#061A59}
+.qc-sign{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid #DCE3EC}@media(max-width:520px){.qc-sign{grid-template-columns:1fr 1fr}}
+.qc-sign div{padding:8px 10px 10px;border-right:1px solid #EEF1F6;border-top:1px solid #EEF1F6;font-size:12.5px;min-height:62px}.qc-sign span{display:block;font-size:9.5px;font-weight:700;color:#5B6B7C;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.qc-sign small{display:block;color:#5B6B7C;font-size:11px}
+.qc-note{font-size:11px;color:#5B6B7C;padding:8px 12px 12px;border-top:1px solid #EEF1F6}
+.qc-tbl{width:100%;border-collapse:collapse;font-size:12.5px}.qc-tbl th{background:#EEF2FB;color:#5B6B7C;font-size:10px;letter-spacing:.4px;text-transform:uppercase;padding:6px 6px;text-align:left;border-top:1px solid #DCE3EC}
+.qc-tbl td{border-top:1px solid #EEF1F6;padding:6px 6px;vertical-align:top}.qc-tbl .c{text-align:center;width:28px;font-weight:800}.qc-tbl tr.s td{background:#F4F6FA;font-weight:800;color:#052585;font-size:10.5px;letter-spacing:.4px;text-transform:uppercase}
+.qc-tbl .y{color:#2E7D4F}.qc-tbl .n{color:#B7443E}.qc-tbl .a{color:#9A6A00}
+.qc-list{border-top:1px solid #EEF1F6}.qc-li{padding:11px 2px;border-bottom:1px solid #EEF1F6;display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.qc-li .m{flex:1;min-width:0}.qc-li b{display:block;font-size:14px;color:#061A59}.qc-li small{display:block;color:#5B6B7C;font-size:12px;margin-top:2px}
+.qst{font-size:10.5px;font-weight:800;border-radius:10px;padding:3px 8px;white-space:nowrap}
+.qst.ok{background:#E7F3EC;color:#2E7D4F}.qst.rw{background:#FBEAEA;color:#B7443E}.qst.wt{background:#FFF6D6;color:#9A6A00}.qst.in{background:#E3F1FA;color:#0F5E86}
+.qc-act{display:flex;gap:6px;flex-wrap:wrap;padding:10px 12px;border-top:1px solid #DCE3EC;background:#FBFCFE}.qc-act .btn{flex:1 1 auto;min-height:42px;font-size:13px}.qc-act input,.qc-act textarea{flex:1 1 100%;min-height:42px}
+.btn.red{color:#B7443E;border-color:#EBC4C1}.btn.grn{background:#2E7D4F;border-color:#2E7D4F;color:#fff}
+.chk .q{font-size:14px}.phrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}.ph{position:relative;width:60px;height:60px}.ph img{width:60px;height:60px;object-fit:cover;border-radius:8px;border:1px solid #DCE3EC}
 .ph .x{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#B7443E;color:#fff;border:0;font-size:12px;line-height:22px;padding:0}
-.ph-add{flex:none!important;width:auto!important;padding:8px 12px!important;margin:0!important}
-.pcst{font-size:11px;font-weight:800;border-radius:10px;padding:2px 8px;white-space:nowrap}
-.pcst.ok{background:#E7F3EC;color:#2E7D4F}.pcst.rw{background:#FBEAEA;color:#B7443E}.pcst.wt{background:#FFF6D6;color:#9A6A00}
+.ph-add{flex:none!important;width:auto!important;padding:7px 11px!important;margin:0!important;min-height:36px!important;font-size:12.5px}
+#qcPrint{display:none}
+@media print{
+  body.qcprinting>*:not(#qcPrint){display:none!important}
+  body.qcprinting #qcPrint{display:block!important}
+  body.qcprinting{padding:0!important;background:#fff}
+  #qcPrint .qc-sheet{border:1px solid #888;box-shadow:none;border-radius:0}
+  #qcPrint .qc-act{display:none}
+  #qcPrint .qc-tbl{font-size:10.5px}
+  @page{size:A4;margin:10mm}
+}
 </style>
 <script>
-/* ---------- shared photo helpers (daily report + pour card) ---------- */
+/* ---------- shared photo helpers (daily report + QC cards) ---------- */
 window.dpcsPhoto={
   pick(){ return new Promise(res=>{ const i=document.createElement('input'); i.type='file'; i.accept='image/*'; i.setAttribute('capture','environment');
     i.onchange=()=>res(i.files&&i.files[0]||null); i.click(); }); },
@@ -1245,119 +1323,405 @@ window.dpcsPhoto={
     w.innerHTML='<img src="'+r.data+'" style="max-width:100%;max-height:100%;border-radius:8px">'; w.onclick=()=>w.remove(); document.body.appendChild(w); }
 };
 (function(){
-  const scrim=document.getElementById('pourScrim'), F=document.getElementById('pcForm'), M=document.getElementById('pcMine');
-  let T=null, P=null;   // templates, current card draft
+  const scrim=document.getElementById('pourScrim'), B=document.getElementById('qcBody'), TB=document.getElementById('qcTabs');
+  let T=null, L=null, P=null, tab='new', fam='RAFT', openId='';
   const call=b=>{ const a=auth(); return a?callApi(Object.assign({token:a.token},b)):Promise.resolve({ok:false,error:'SIGNIN_REQUIRED'}); };
   const ERR=e=>({UNKNOWN_ACTION:'The server is not updated yet.',OFFLINE:'No internet.'}[e]||e);
+  const me=()=>{ const a=auth(); return a?a.mobile:''; };
+  const nm=s=>String(s||'').split(' (')[0];
+  const isMine=c=>String(c.requested_by).indexOf('('+me()+')')>=0;
+  const def=k=>(T&&T.cards||[]).find(c=>c.kind===k)||null;
+  const PERMIT='APPROVED - PERMIT TO POUR';
+  const today=()=>new Date(Date.now()+330*60000).toISOString().slice(0,10);
+  const dmy=iso=>iso?String(iso).split('-').reverse().join('-'):'';
   window.pourBtn=function(){
     const a=auth(), row=document.querySelector('.top .row'); let t=document.getElementById('btnPour');
     if(!a||!row||!a.pour){ if(t) t.remove(); return; }
-    if(!t){ t=document.createElement('button'); t.id='btnPour'; t.type='button'; t.className='hbtn'; t.innerHTML='🧱<span class="hl"> Pour card</span>'; t.title='Pour card';
-      row.insertBefore(t,document.getElementById('btnCtrl')||document.getElementById('btnTeam')||document.getElementById('btnUser')||null); t.onclick=open; }
+    if(!t){ t=document.createElement('button'); t.id='btnPour'; t.type='button'; t.className='hbtn'; t.innerHTML='🧱<span class="hl"> QC Cards</span>'; t.title='QC checklists & pour cards';
+      row.appendChild(t); t.onclick=()=>open(); }
   };
-  const blank=k=>({kind:k||'COLUMN',location:'',floor:'',member_grid:'',grade:'',drawing_ref:'',proposed_volume_m3:'',planned_pour_date:'',remarks:'',checks:{},photos:[],resubmit_of:''});
-  async function open(){ scrim.style.display='block'; if(!T){ F.innerHTML='<div class="card note">Loading checklist…</div>'; const r=await call({action:'pour_templates'}); if(!r.ok){ F.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return; } T=r; }
-    if(!P) P=blank(); draw(); list(); }
-  document.getElementById('pcClose').onclick=()=>{ scrim.style.display='none'; };
-  document.getElementById('pcRefresh').onclick=list;
-  const opt=(arr,v,ph)=>'<option value="">'+ph+'</option>'+arr.map(x=>`<option${x===v?' selected':''}>${esc(x)}</option>`).join('');
-  function draw(){
-    const tpl=T.templates[P.kind]||[];
-    const kinds=Object.keys(T.kinds).map(k=>`<button type="button" data-kind="${k}" class="${P.kind===k?'on':''}">${k==='COLUMN'?'Column / starter':k==='RAFT'?'Raft':'Beam & slab'}</button>`).join('');
-    const chk=tpl.map(t=>{ const c=P.checks[t.no]||{}; const a=c.answer||'';
-      return `<div class="chk"><div class="q"><b>${t.no}.</b>${esc(t.text)}${t.critical?'<span class="crit">CRITICAL</span>':''}</div>
-        <div class="yn"><button type="button" data-no="${t.no}" data-a="YES" class="y${a==='YES'?' on':''}">Yes</button><button type="button" data-no="${t.no}" data-a="NO" class="n${a==='NO'?' on':''}">No</button><button type="button" data-no="${t.no}" data-a="NA" class="na${a==='NA'?' on':''}">NA</button></div>
-        ${a==='NO'||a==='NA'?`<textarea data-note="${t.no}" placeholder="${a==='NO'?'What is wrong? (required)':'Why not applicable? (required)'}" style="margin-top:8px">${esc(c.note||'')}</textarea>
-        <div class="phrow">${(c.photos||[]).map((p,k)=>`<span class="ph"><img src="${p.thumb}" alt="Photo"><button class="x" type="button" data-delph="${t.no}" data-k="${k}">✕</button></span>`).join('')}
-        <button class="add-row ph-add" type="button" data-addph="${t.no}">📷 ${a==='NO'?'Add photo (required)':'Add photo'}</button></div>`:''}</div>`; }).join('');
-    const nAns=tpl.filter(t=>(P.checks[t.no]||{}).answer).length, nNo=tpl.filter(t=>(P.checks[t.no]||{}).answer==='NO').length;
-    F.innerHTML=`<div class="card"><h2>${P.resubmit_of?'Resubmit '+esc(P.resubmit_of):'New pour card'}</h2>
-      <div class="pc-kinds">${kinds}</div>
-      <div class="grid" style="margin-top:12px">
-        <div><label class="f">Location <span class="req">*</span></label><select data-f="location">${opt((l=>l.base.concat(l.add))(lists('locations')),P.location,'Select…')}</select></div>
-        <div><label class="f">Floor / level <span class="req">*</span></label><select data-f="floor">${opt((l=>l.base.concat(l.add))(lists('floors')),P.floor,'Select…')}</select></div>
-        <div class="full"><label class="f">Member / grid${P.kind==='COLUMN'?' <span class="req">*</span>':''}</label><input type="text" data-f="member_grid" value="${esc(P.member_grid)}" placeholder="${P.kind==='COLUMN'?'e.g. C12–C18, SW-3':'e.g. Grid 1–6 / A–F'}"></div>
-        <div><label class="f">Concrete grade <span class="req">*</span></label><select data-f="grade">${opt(T.grades,P.grade,'Grade…')}</select></div>
-        <div><label class="f">Proposed volume (m³) <span class="req">*</span></label><input type="number" inputmode="decimal" min="0" step="any" data-f="proposed_volume_m3" value="${esc(P.proposed_volume_m3)}"></div>
-        <div><label class="f">Planned pour date <span class="req">*</span></label><input type="date" data-f="planned_pour_date" value="${esc(P.planned_pour_date)}"></div>
-        <div><label class="f">Drawing ref / revision</label><input type="text" data-f="drawing_ref" value="${esc(P.drawing_ref)}" placeholder="e.g. ST-A3-07 R2"></div>
-      </div></div>
-      <div class="card"><h2>${esc(T.kinds[P.kind])} <span class="pill">${nAns}/${tpl.length}</span></h2>
-        <p class="note" style="margin-top:-4px">Any <b>No</b> makes the card NOT READY (rework). <b>NA</b> needs a reason. Approval = permit to pour only.</p>${chk}
-        <label class="f" style="margin-top:10px">Remarks (optional)</label><textarea data-f="remarks">${esc(P.remarks)}</textarea>
-        <div class="phrow">${P.photos.map((p,k)=>`<span class="ph"><img src="${p.thumb}" alt="Photo"><button class="x" type="button" data-delgph="${k}">✕</button></span>`).join('')}<button class="add-row ph-add" type="button" id="pcAddPh">📷 Add general photo</button></div>
-        <button class="btn pri" type="button" id="pcSubmit" style="width:100%;margin-top:14px;min-height:48px">${nNo?'Submit (will be NOT READY)':'Submit for QA approval'}</button>
-        ${P.resubmit_of?'<button class="btn" type="button" id="pcCancel" style="width:100%;margin-top:8px">Cancel resubmission</button>':''}</div>`;
-    F.querySelectorAll('[data-kind]').forEach(b=>b.onclick=()=>{ if(P.kind===b.dataset.kind) return; P.kind=b.dataset.kind; P.checks={}; draw(); });
-    F.querySelectorAll('[data-f]').forEach(el=>el.oninput=el.onchange=()=>{ P[el.dataset.f]=el.value; });
-    F.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{ const c=P.checks[b.dataset.no]||(P.checks[b.dataset.no]={note:'',photos:[]}); c.answer=b.dataset.a; draw(); });
-    F.querySelectorAll('[data-note]').forEach(el=>el.oninput=()=>{ P.checks[el.dataset.note].note=el.value; });
-    F.querySelectorAll('[data-addph]').forEach(b=>b.onclick=async()=>{ const p=await dpcsPhoto.take('POUR_CARD','check '+b.dataset.addph+' '+(P.location||'')); if(p){ P.checks[b.dataset.addph].photos.push(p); draw(); } });
-    F.querySelectorAll('[data-delph]').forEach(b=>b.onclick=()=>{ P.checks[b.dataset.delph].photos.splice(+b.dataset.k,1); draw(); });
-    F.querySelectorAll('[data-delgph]').forEach(b=>b.onclick=()=>{ P.photos.splice(+b.dataset.delgph,1); draw(); });
-    document.getElementById('pcAddPh').onclick=async()=>{ const p=await dpcsPhoto.take('POUR_CARD','general '+(P.location||'')); if(p){ P.photos.push(p); draw(); } };
-    if(document.getElementById('pcCancel')) document.getElementById('pcCancel').onclick=()=>{ P=blank(); draw(); };
-    document.getElementById('pcSubmit').onclick=submit;
+  const blank=k=>({kind:k||'',location:'',floor:'',member_grid:'',drawing_ref:'',inspection_date:today(),grade:'',proposed_volume_m3:'',planned_pour_date:today(),remarks:'',consultant_rep:'',checks:{},photos:[],resubmit_of:''});
+  async function load(){ if(!T){ const r=await call({action:'pour_templates'}); if(!r.ok){ B.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return false; }
+      if(!r.cards){ B.innerHTML='<div class="card note">The server is still on the old pour card version. Ask the admin to deploy DPCS v14.</div>'; return false; } T=r; }
+    return true; }
+  async function refresh(){ const r=await call({action:'pour_list'}); if(r.ok) L=r; return r; }
+  async function open(t){ scrim.style.display='block'; B.innerHTML='<div class="card note">Loading QC cards…</div>';
+    if(!(await load())) return; await refresh(); if(t) tab=t; if(!P) P=blank(''); tabs(); draw(); }
+  window.qcOpen=open;
+  function tabs(){
+    const rv=L&&L.reviewer, n=rv?L.to_review.length:0, rw=L?L.mine.filter(c=>c.status==='REWORK'||(c.status===PERMIT&&c.type==='POUR'&&!c.legacy)).length:0;
+    const tt=[['new','＋ New card'],['mine','My cards'+(rw?' <span class="ctbadge">'+rw+'</span>':'')]].concat(rv?[['review','QA review'+(n?' <span class="ctbadge">'+n+'</span>':'')]]:[]);
+    TB.innerHTML=tt.map(x=>`<button type="button" class="pgt${tab===x[0]?' on':''}" data-t="${x[0]}">${x[1]}</button>`).join('');
+    TB.querySelectorAll('[data-t]').forEach(b=>b.onclick=async()=>{ tab=b.dataset.t; openId=''; if(tab!=='new'){ B.innerHTML='<div class="card note">Loading…</div>'; await refresh(); } tabs(); draw(); scrim.scrollTo({top:0}); });
+  }
+  function draw(){ if(tab==='new') drawNew(); else drawList(tab==='review'); }
+
+  /* ---------- status helpers ---------- */
+  function stPill(c){ const s=String(c.status);
+    if(s===PERMIT) return '<span class="qst ok">PERMIT TO POUR</span>'; if(s==='ACCEPTED') return '<span class="qst ok">ACCEPTED</span>';
+    if(s==='CLOSED - ACCEPTED') return '<span class="qst ok">CLOSED · ACCEPTED</span>'; if(s==='POUR COMPLETED') return '<span class="qst in">POURED · QA TO CLOSE</span>';
+    if(s==='CLOSED - NCR RAISED') return '<span class="qst rw">CLOSED · NCR</span>'; if(s==='NOT ACCEPTED') return '<span class="qst rw">NOT ACCEPTED</span>';
+    if(s==='REWORK') return '<span class="qst rw">RECTIFY &amp; RE-INSPECT</span>'; return '<span class="qst wt">AWAITING QA</span>'; }
+  const sameM=(a,b)=>{ const n=s=>String(s||'').toUpperCase().replace(/\s/g,''); return !n(a)||!n(b)||n(a)===n(b); };
+  function prereqOf(kind,loc,floor,member){ const d=def(kind); return (d&&d.requires||[]).map(k=>{ const c=(L&&L.accepted||[]).filter(x=>x.kind===k&&x.location===loc&&String(x.floor)===String(floor)&&sameM(x.member_grid,member)).pop(); return {kind:k,title:(def(k)||{}).title||k,card:c}; }); }
+
+  /* ---------- one-page sheet: header + fields ---------- */
+  function sheetTop(d,no){ const H=T.header||{};
+    return `<div class="qc-top"><div><div class="p">${esc(H.project||'')}</div><h3>${esc(d.title)}</h3></div><span class="qbadge ${d.type==='POUR'?'pc':'cl'}">${d.type==='POUR'?'POUR CARD':'CHECKLIST'}</span></div>
+      <div class="qc-meta"><div><span>Owner / Client</span>${esc(H.owner)}</div><div><span>Main contractor</span>${esc(H.contractor)}</div>
+      <div><span>Consultant</span>${esc(H.consultant)}</div><div><span>Work</span>${esc(d.work)}</div>
+      <div><span>Checklist / pour card no.</span>${esc(no||'Given on submit')}</div><div><span>Project</span>DPCS · ST-SANDBOX</div></div>`; }
+  const opt=(arr,v,ph)=>'<option value="">'+ph+'</option>'+arr.map(x=>`<option${x===v?' selected':''}>${esc(x)}</option>`).join('')+(v&&arr.indexOf(v)<0?`<option selected>${esc(v)}</option>`:'');
+  const L2=cat=>(l=>l.base.concat(l.add))(lists(cat));
+
+  /* ---------- NEW CARD (edit) ---------- */
+  function drawNew(){
+    const fams=[['RAFT','Raft'],['STARTER','Starter'],['COL','Column / SW'],['SLAB','Beam & slab']];
+    if(P.kind && def(P.kind)) fam=def(P.kind).family;
+    const kinds=T.cards.filter(c=>c.family===fam);
+    let h=`<div class="card"><h2>1 · Choose the card</h2><div class="qc-fam">${fams.map(f=>`<button type="button" data-fam="${f[0]}" class="${fam===f[0]?'on':''}">${f[1]}</button>`).join('')}</div>
+      <div class="qc-kinds">${kinds.map(c=>`<button type="button" data-kind="${c.kind}" class="${P.kind===c.kind?'on':''}"><span class="qbadge ${c.type==='POUR'?'pc':'cl'}">${c.type==='POUR'?'POUR CARD':'CHECKLIST'}</span><b>${esc(c.title)}</b><span class="n">${(T.templates[c.kind]||[]).length} items</span></button>`).join('')}</div>
+      <p class="note" style="margin:8px 0 0">Order on site: shuttering &amp; steel checklists accepted by QA → pour card (pre-pour) → permit to pour → record during &amp; post-pour → QA closes.</p></div>`;
+    if(!P.kind){ B.innerHTML=h; bindNew(); return; }
+    const d=def(P.kind), pour=d.type==='POUR', items=(T.templates[P.kind]||[]).filter(t=>!pour||t.stage==='PRE');
+    const pre=pour?prereqOf(P.kind,P.location,P.floor,P.member_grid):[];
+    const memberReq=/^(COL|STARTER)_/.test(P.kind);
+    h+=`<div class="qc-sheet">${sheetTop(d,P.resubmit_of?P.resubmit_of+' (re-inspection)':'')}
+      <div class="qc-fields">
+        <div><label class="f">Block / raft / location <span class="star">*</span></label><select data-f="location">${opt(L2('locations'),P.location,'Select…')}</select></div>
+        <div><label class="f">Floor / level <span class="star">*</span></label><select data-f="floor">${opt(L2('floors'),P.floor,'Select…')}</select></div>
+        <div><label class="f">Grid / member ID${memberReq?' <span class="star">*</span>':''}</label><input type="text" data-f="member_grid" value="${esc(P.member_grid)}" placeholder="${memberReq?'e.g. C12–C18, SW-3':'e.g. Grid 1–6 / A–F'}"></div>
+        <div><label class="f">Drawing ref. / rev.</label><input type="text" data-f="drawing_ref" value="${esc(P.drawing_ref)}" placeholder="e.g. ST-A3-07 R2"></div>
+        ${pour?`<div><label class="f">Concrete grade <span class="star">*</span></label><select data-f="grade">${opt(T.grades,P.grade||d.grade,'Grade…')}</select></div>
+        <div><label class="f">Concrete qty. (m³) <span class="star">*</span></label><input type="number" inputmode="decimal" min="0" step="any" data-f="proposed_volume_m3" value="${esc(P.proposed_volume_m3)}" placeholder="Planned"></div>
+        <div><label class="f">Planned pour date <span class="star">*</span></label><input type="date" data-f="planned_pour_date" value="${esc(P.planned_pour_date)}"></div>`
+        :`<div><label class="f">Inspection date <span class="star">*</span></label><input type="date" data-f="inspection_date" value="${esc(P.inspection_date)}"></div>`}
+        <div><label class="f">Consultant / authorised rep.</label><input type="text" data-f="consultant_rep" value="${esc(P.consultant_rep)}" placeholder="Name (optional)"></div>
+      </div>
+      ${pour?`<div class="qc-h"><span>Prerequisite checklists (same location · floor · member)</span></div><div class="qc-pre" style="margin-top:10px">${pre.map(p=>p.card?`<div><span class="ok">✓</span>${esc(p.title)} <small class="note">accepted · ${esc(p.card.card_id)} r${p.card.revision}</small></div>`
+        :`<div><span class="no">✕</span>${esc(p.title)} <small class="note">not accepted yet</small><button type="button" data-goreq="${p.kind}">Open</button></div>`).join('')}</div>`:''}
+      <div class="qc-h"><span>Audit / inspection item</span><span>Y · N · N/A</span></div>`;
+    let sec='';
+    items.forEach(t=>{ const c=P.checks[t.no]||{}, a=c.answer||'';
+      if(t.section!==sec){ sec=t.section; h+=`<div class="qc-sec">${pour?'1. ':''}${esc(sec)}</div>`; }
+      h+=`<div class="qc-row${a==='NO'?' bad':a==='NA'?' na':''}"><span class="no">${t.no}</span><span class="t">${esc(t.text)}</span>
+        <span class="qc-yn"><button type="button" data-no="${t.no}" data-a="YES" class="y${a==='YES'?' on':''}">Y</button><button type="button" data-no="${t.no}" data-a="NO" class="n${a==='NO'?' on':''}">N</button><button type="button" data-no="${t.no}" data-a="NA" class="na${a==='NA'?' on':''}">N/A</button></span>
+        <div class="cm"><input type="text" data-note="${t.no}" value="${esc(c.note||'')}" placeholder="${a==='NO'?'Non-conformance — what is wrong? (required)':a==='NA'?'Justification for N/A (required)':'Comments / actual (optional)'}">
+        ${a==='NO'||(c.photos||[]).length?`<div class="phrow">${(c.photos||[]).map((p,k)=>`<span class="ph"><img src="${p.thumb}" alt="Photo"><button class="x" type="button" data-delph="${t.no}" data-k="${k}">✕</button></span>`).join('')}
+        <button class="add-row ph-add" type="button" data-addph="${t.no}">📷 ${a==='NO'?'Photo (required)':'Photo'}</button></div>`:''}</div></div>`; });
+    const nAns=items.filter(t=>(P.checks[t.no]||{}).answer).length, nNo=items.filter(t=>(P.checks[t.no]||{}).answer==='NO').length;
+    h+=`<div class="qc-foot"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span class="pill">${nAns}/${items.length} answered${nNo?' · '+nNo+' N':''}</span><button type="button" class="qc-all" id="qcAllY">Mark unanswered as Y</button></div>
+        <label class="f" style="margin-top:12px">Audit results / remarks / corrective action</label><textarea data-f="remarks" placeholder="Optional">${esc(P.remarks)}</textarea>
+        <div class="phrow">${P.photos.map((p,k)=>`<span class="ph"><img src="${p.thumb}" alt="Photo"><button class="x" type="button" data-delgph="${k}">✕</button></span>`).join('')}<button class="add-row ph-add" type="button" id="qcAddPh">📷 General photo</button></div></div>
+      <div class="qc-res"><b>Result:</b><span>☐ Accepted</span><span>☐ Rectification / re-inspection required</span><span>☐ Not accepted</span><small class="note" style="flex-basis:100%">Given by QA/QC on review${pour?' (pour card: permit to pour, then closed after the pour)':''}.</small></div>
+      <div class="qc-sign"><div><span>Site Engineer</span>${esc((auth()||{}).name||'')}<small>on submit</small></div><div><span>QA/QC Engineer</span><small>on review</small></div><div><span>Project Manager</span><small>&nbsp;</small></div><div><span>Consultant / authorised rep.</span>${esc(P.consultant_rep||'')}</div></div>
+      <div class="qc-note">${esc((T.header||{}).note||'')}</div>
+      <div class="qc-act"><button class="btn pri" type="button" id="qcSubmit">${nNo?'Submit (N item → rectification)':pour?'Submit pre-pour for permit':'Submit for QA inspection'}</button>
+        ${P.resubmit_of?'<button class="btn" type="button" id="qcCancel">Cancel re-inspection</button>':''}</div></div>`;
+    B.innerHTML=h; bindNew();
+  }
+  function bindNew(){
+    B.querySelectorAll('[data-fam]').forEach(b=>b.onclick=()=>{ fam=b.dataset.fam; if(P.kind&&def(P.kind).family!==fam){ P.kind=''; P.checks={}; } drawNew(); });
+    B.querySelectorAll('[data-kind]').forEach(b=>b.onclick=()=>{ if(P.kind===b.dataset.kind) return; const keep={location:P.location,floor:P.floor,member_grid:P.member_grid,drawing_ref:P.drawing_ref};
+      P=Object.assign(blank(b.dataset.kind),keep); drawNew(); });
+    B.querySelectorAll('[data-f]').forEach(el=>el.oninput=el.onchange=()=>{ P[el.dataset.f]=el.value; if(el.tagName==='SELECT'&&/location|floor/.test(el.dataset.f)) drawNew(); });
+    B.querySelectorAll('[data-f="member_grid"]').forEach(el=>el.onchange=()=>{ P.member_grid=el.value; drawNew(); });
+    B.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{ const c=P.checks[b.dataset.no]||(P.checks[b.dataset.no]={note:'',photos:[]}); c.answer=b.dataset.a; drawNew(); });
+    B.querySelectorAll('[data-note]').forEach(el=>el.oninput=()=>{ (P.checks[el.dataset.note]||(P.checks[el.dataset.note]={answer:'',photos:[]})).note=el.value; });
+    B.querySelectorAll('[data-addph]').forEach(b=>b.onclick=async()=>{ const p=await dpcsPhoto.take('POUR_CARD','item '+b.dataset.addph+' '+(P.location||'')); if(p){ (P.checks[b.dataset.addph]=P.checks[b.dataset.addph]||{answer:'',note:'',photos:[]}).photos.push(p); drawNew(); } });
+    B.querySelectorAll('[data-delph]').forEach(b=>b.onclick=()=>{ P.checks[b.dataset.delph].photos.splice(+b.dataset.k,1); drawNew(); });
+    B.querySelectorAll('[data-delgph]').forEach(b=>b.onclick=()=>{ P.photos.splice(+b.dataset.delgph,1); drawNew(); });
+    B.querySelectorAll('[data-goreq]').forEach(b=>b.onclick=()=>{ P=Object.assign(blank(b.dataset.goreq),{location:P.location,floor:P.floor,member_grid:P.member_grid,drawing_ref:P.drawing_ref}); drawNew(); scrim.scrollTo({top:0,behavior:'smooth'}); });
+    const g=id=>document.getElementById(id);
+    if(g('qcAddPh')) g('qcAddPh').onclick=async()=>{ const p=await dpcsPhoto.take('POUR_CARD','general '+(P.location||'')); if(p){ P.photos.push(p); drawNew(); } };
+    if(g('qcAllY')) g('qcAllY').onclick=()=>{ (T.templates[P.kind]||[]).filter(t=>def(P.kind).type!=='POUR'||t.stage==='PRE').forEach(t=>{ const c=P.checks[t.no]||(P.checks[t.no]={note:'',photos:[]}); if(!c.answer) c.answer='YES'; }); drawNew(); };
+    if(g('qcCancel')) g('qcCancel').onclick=()=>{ P=blank(''); drawNew(); };
+    if(g('qcSubmit')) g('qcSubmit').onclick=submit;
   }
   async function submit(){
-    const tpl=T.templates[P.kind]||[];
-    const body={action:'pour_submit',kind:P.kind,location:P.location,floor:P.floor,member_grid:P.member_grid,grade:P.grade,drawing_ref:P.drawing_ref,
-      proposed_volume_m3:P.proposed_volume_m3,planned_pour_date:P.planned_pour_date,remarks:P.remarks,photos:P.photos.map(p=>p.id),resubmit_of:P.resubmit_of||'',
-      checks:tpl.map(t=>{ const c=P.checks[t.no]||{}; return {no:t.no,answer:c.answer||'',note:c.note||'',photos:(c.photos||[]).map(p=>p.id)}; })};
-    const b=document.getElementById('pcSubmit'); b.disabled=true; b.textContent='Submitting…';
+    const d=def(P.kind), pour=d.type==='POUR', items=(T.templates[P.kind]||[]).filter(t=>!pour||t.stage==='PRE');
+    const body={action:'pour_submit',kind:P.kind,location:P.location,floor:P.floor,member_grid:P.member_grid,drawing_ref:P.drawing_ref,consultant_rep:P.consultant_rep,
+      inspection_date:P.inspection_date,grade:pour?(P.grade||d.grade):'',proposed_volume_m3:pour?P.proposed_volume_m3:'',planned_pour_date:pour?P.planned_pour_date:P.inspection_date,
+      remarks:P.remarks,photos:P.photos.map(p=>p.id),resubmit_of:P.resubmit_of||'',
+      checks:items.map(t=>{ const c=P.checks[t.no]||{}; return {no:t.no,answer:c.answer||'',note:c.note||'',photos:(c.photos||[]).map(p=>p.id)}; })};
+    const b=document.getElementById('qcSubmit'); b.disabled=true; b.textContent='Submitting…';
     const r=await call(body); b.disabled=false;
-    if(!r.ok){ toast(ERR(r.error)); draw(); return; }
-    confirmBox(r.result==='NOT READY'?'NOT READY — rework':'Submitted for approval',
-      `<p style="margin:0">${esc(r.card_id)} · revision ${r.revision}</p><p class="note">${r.result==='NOT READY'?'Check(s) '+esc(r.failed.join(', '))+' failed. Rectify on site, then open the card below and resubmit.':'QA / Project Manager will review. You will see the decision under My pour cards.'}</p>`,[['OK','pri']]);
-    P=blank(P.kind); draw(); list();
-  }
-  async function list(){
-    M.textContent='Loading…'; const r=await call({action:'pour_list'});
-    if(!r.ok){ M.textContent=ERR(r.error); return; }
-    const st=c=>/^APPROVED/.test(c.status)?'<span class="pcst ok">PERMIT TO POUR</span>':c.status==='REWORK'?'<span class="pcst rw">REWORK</span>':'<span class="pcst wt">AWAITING QA</span>';
-    M.innerHTML=r.mine.length?r.mine.map(c=>`<div class="ctrow"><div class="cthd"><div><b>${esc(c.kind_label)}</b><br><span class="note">${esc(c.card_id)} r${c.revision} · ${esc(c.location)} · ${esc(c.floor)}${c.member_grid?' · '+esc(c.member_grid):''} · ${esc(c.grade)} · pour ${esc(c.planned_pour_date)}</span>
-      ${c.review_note?`<br><span class="note" style="color:${c.status==='REWORK'?'#B7443E':'#2E7D4F'}">${esc(String(c.reviewed_by).split(' (')[0])}: ${esc(c.review_note)}</span>`:''}</div>${st(c)}</div>
-      ${c.status==='REWORK'?`<button class="btn" type="button" data-rs="${esc(c.card_id)}" style="margin-top:8px;min-height:38px">Rectified — resubmit</button>`:''}</div>`).join('')
-      :'<p class="note">No pour cards yet.</p>';
-    M.querySelectorAll('[data-rs]').forEach(b=>b.onclick=()=>{ const c=r.mine.find(x=>x.card_id===b.dataset.rs);
-      P=blank(c.kind); Object.assign(P,{location:c.location,floor:c.floor,member_grid:c.member_grid,grade:c.grade,drawing_ref:c.drawing_ref,proposed_volume_m3:c.proposed_volume_m3,
-        planned_pour_date:String(c.planned_pour_date).split('-').reverse().join('-'),resubmit_of:c.card_id});
-      c.checks.forEach(k=>{ if(k.answer!=='NO') P.checks[k.no]={answer:k.answer,note:k.note,photos:[]}; });
-      draw(); scrim.scrollTo({top:0,behavior:'smooth'}); toast('Re-check the failed items, then submit'); });
+    if(!r.ok){ b.textContent='Submit'; toast(ERR(r.error)); confirmBox('Not submitted',`<p style="margin:0">${esc(ERR(r.error))}</p>`,[['OK','pri']]); return; }
+    confirmBox(r.result==='NOT READY'?'Rectification required':'Submitted to QA/QC',
+      `<p style="margin:0"><b>${esc(d.title)}</b><br>${esc(r.card_id)} · revision ${r.revision}</p><p class="note">${r.result==='NOT READY'?'Item(s) '+esc(r.failed.join(', '))+' marked N. Rectify on site, then open it in My cards and re-inspect.':pour?'QA/QC will give the permit to pour. Linked checklists: '+esc((r.linked||[]).join(', ')):'QA/QC will inspect and accept it. You will see the result in My cards.'}</p>`,[['OK','pri']]);
+    P=blank(''); await refresh(); tabs(); drawNew();
   }
 
-  /* ---------- review tab inside Project control ---------- */
-  window.pourReview=async function(box){
-    box.innerHTML='<div class="card note">Loading…</div>';
-    const r=await call({action:'pour_list'});
-    if(!r.ok){ box.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return; }
-    const pend=document.getElementById('ctPour'); if(pend) pend.textContent=r.to_review.length||'';
-    const ans=k=>k.answer==='YES'?'<b style="color:#2E7D4F">Yes</b>':k.answer==='NO'?'<b style="color:#B7443E">No</b>':'<b style="color:#9A6A00">NA</b>';
-    const card=(c,rev)=>`<div class="ctrow"><div class="cthd"><div><span class="ctblk">${esc(c.block||'—')}</span><b>${esc(c.kind_label)}</b><br>
-      <span class="note">${esc(c.location)} · ${esc(c.floor)}${c.member_grid?' · '+esc(c.member_grid):''} · ${esc(c.grade)} · ${esc(c.proposed_volume_m3)} m³ · pour ${esc(c.planned_pour_date)}${c.drawing_ref?' · dwg '+esc(c.drawing_ref):''}</span><br>
-      <span class="note">${esc(c.card_id)} r${c.revision} · by ${esc(String(c.requested_by).split(' (')[0])} · ${esc(c.created_at)}</span></div>
-      <span class="ctst ${/^APPROVED/.test(c.status)?'v':c.status==='REWORK'?'x':'p'}">${esc(/^APPROVED/.test(c.status)?'PERMIT':c.status)}</span></div>
-      <div style="margin-top:6px;font-size:13px">${c.checks.map(k=>`<div style="padding:3px 0">${k.no}. ${esc(k.text)} — ${ans(k)}${k.note?` <span class="note">(${esc(k.note)})</span>`:''}${k.photos.length?` <a href="#" data-ev="${esc(k.photos[0])}">📷 ${k.photos.length}</a>`:''}</div>`).join('')}
-        ${c.photo_ids.length?`<div class="note">Photos: ${c.photo_ids.map((p,i)=>`<a href="#" data-ev="${esc(p)}">📷 ${i+1}</a>`).join(' ')}</div>`:''}
-        <div style="margin-top:4px"><b>${esc(c.result)}</b>${c.review_note?` · <span class="note">${esc(c.review_note)}</span>`:''}</div></div>
-      ${rev?`<div class="ctin"><input type="text" placeholder="${/EXCEPTION/.test(c.result)?'Reason for accepting NA (required)':'Note (required for rework)'}" data-pn="${esc(c.card_id)}" style="flex:2;min-width:160px">
-        <button class="btn pri" type="button" data-pa="${esc(c.card_id)}" data-r="${c.revision}" style="flex:none;min-height:40px"${c.result==='NOT READY'?' disabled':''}>Approve — permit to pour</button>
-        <button class="btn" type="button" data-pw="${esc(c.card_id)}" data-r="${c.revision}" style="flex:none;min-height:40px;color:#B7443E">Rework</button></div>`:''}</div>`;
-    box.innerHTML=`<div class="card"><h2>Pour cards to review (${r.to_review.length})</h2><p class="note" style="margin-top:-4px">Approval permits the pour only — it never records concrete as cast.</p>
-      ${r.to_review.length?r.to_review.map(c=>card(c,true)).join(''):'<p class="note">Nothing waiting.</p>'}</div>
-      <div class="card"><h2>Recent decisions</h2>${r.recent.length?r.recent.map(c=>card(c,false)).join(''):'<p class="note">None yet.</p>'}</div>`;
-    box.querySelectorAll('[data-ev]').forEach(a=>a.onclick=e=>{ e.preventDefault(); dpcsPhoto.view(a.dataset.ev); });
-    const dec=async(b,decision)=>{ const id=b.dataset.pa||b.dataset.pw, note=box.querySelector(`[data-pn="${CSS.escape(id)}"]`).value.trim();
-      if(decision==='REWORK'&&!note){ toast('Write what must be rectified'); return; }
-      if(decision==='APPROVE'&&!confirm('Give permit to pour for '+id+'?')) return;
-      b.disabled=true; const x=await call({action:'pour_decide',card_id:id,revision:+b.dataset.r,decision,note});
-      if(x.ok){ toast(decision==='APPROVE'?'Permit to pour given':'Sent for rework'); pourReview(box); } else { b.disabled=false; toast(ERR(x.error)); } };
-    box.querySelectorAll('[data-pa]').forEach(b=>b.onclick=()=>dec(b,'APPROVE'));
-    box.querySelectorAll('[data-pw]').forEach(b=>b.onclick=()=>dec(b,'REWORK'));
-  };
+  /* ---------- LIST + one-page VIEW ---------- */
+  function drawList(review){
+    if(!L){ B.innerHTML='<div class="card note">Could not load.</div>'; return; }
+    const groups=review?[['To inspect / approve',L.to_review],['Recent decisions',L.recent]]:[['Needs your action',L.mine.filter(c=>c.status==='REWORK'||(c.status===PERMIT&&!c.legacy))],['All my cards',L.mine.filter(c=>!(c.status==='REWORK'||(c.status===PERMIT&&!c.legacy)))]];
+    B.innerHTML=groups.map((g,gi)=>`<div class="card"><h2>${g[0]} (${g[1].length})</h2>${g[1].length?`<div class="qc-list">${g[1].map(c=>li(c,review)).join('')}</div>`:'<p class="note">'+(gi===0?'Nothing waiting.':'None yet.')+'</p>'}</div>`).join('')+
+      (review?'<p class="note" style="text-align:center">Permit to pour is permission only — the pour is recorded by the engineer and closed by QA.</p>':'');
+    B.querySelectorAll('[data-open]').forEach(el=>el.onclick=e=>{ if(e.target.closest('.qc-sheet,.qc-act,[data-stage2]')) return; openId=openId===el.dataset.open?'':el.dataset.open; drawList(review); if(openId) setTimeout(()=>{ const s=B.querySelector('.qc-li.op'); if(s) s.scrollIntoView({behavior:'smooth',block:'start'}); },30); });
+    bindView(review);
+  }
+  function li(c,review){ const k=c.card_id+'|'+c.revision, op=openId===k;
+    return `<div class="qc-li${op?' op':''}" data-open="${esc(k)}" style="flex-wrap:wrap"><span class="qbadge ${c.type==='POUR'?'pc':'cl'}">${c.type==='POUR'?'POUR':'CHK'}</span><div class="m"><b>${esc(c.kind_label)}</b>
+      <small>${c.block?'<span class="ctblk">'+esc(c.block)+'</span>':''}${esc(c.location)} · ${esc(c.floor)}${c.member_grid?' · '+esc(c.member_grid):''}</small>
+      <small>${esc(c.card_id)} r${c.revision} · ${esc(nm(c.requested_by))} · ${esc(c.created_at)}</small></div>${stPill(c)}
+      ${op?`<div style="flex-basis:100%;margin-top:10px">${sheetView(c)}${actions(c,review)}</div>`:''}</div>`; }
+  function resultBoxes(c){ const s=String(c.status), acc=/^(ACCEPTED|APPROVED|CLOSED - ACCEPTED)/.test(s), rw=s==='REWORK'||/NCR/.test(s), na=s==='NOT ACCEPTED';
+    return `<div class="qc-res"><b>Result:</b><span class="${acc?'on':''}">${acc?'☑':'☐'} Accepted</span><span class="${rw?'on':''}">${rw?'☑':'☐'} Rectification / re-inspection required</span><span class="${na?'on':''}">${na?'☑':'☐'} Not accepted</span>
+      ${s==='SUBMITTED'||s==='POUR COMPLETED'?'<small class="note" style="flex-basis:100%">Awaiting QA/QC.</small>':''}</div>`; }
+  function itemsTable(list,title){ let sec='', h=`<table class="qc-tbl"><tr><th style="width:24px">#</th><th>${esc(title||'Audit / inspection item')}</th><th class="c">Y</th><th class="c">N</th><th class="c">N/A</th><th>Comments / actual</th></tr>`;
+    list.forEach(k=>{ if(k.section&&k.section!==sec){ sec=k.section; h+=`<tr class="s"><td colspan="6">${esc(sec)}</td></tr>`; }
+      h+=`<tr><td>${k.no}</td><td>${esc(k.text)}</td><td class="c y">${k.answer==='YES'?'✓':''}</td><td class="c n">${k.answer==='NO'?'✕':''}</td><td class="c a">${k.answer==='NA'?'—':''}</td>
+        <td>${esc(k.note||'')}${(k.photos||[]).length?` <a href="#" data-ev="${esc(k.photos[0])}">📷${k.photos.length}</a>`:''}</td></tr>`; });
+    return h+'</table>'; }
+  function sheetView(c){ const d=def(c.kind)||{title:c.kind_label,work:c.work||'',type:c.type}; const pour=c.type==='POUR';
+    return `<div class="qc-sheet">${sheetTop(d,c.card_id+' · rev '+c.revision)}
+      <div class="qc-meta" style="border-top:1px solid #DCE3EC"><div><span>Block / location</span>${esc(c.block?c.block+' · ':'')}${esc(c.location)}</div><div><span>Floor / level</span>${esc(c.floor)}</div>
+        <div><span>Grid / member ID</span>${esc(c.member_grid||'—')}</div><div><span>Drawing ref. / rev.</span>${esc(c.drawing_ref||'—')}</div>
+        <div><span>${pour?'Concrete grade':'Inspection date'}</span>${esc(pour?c.grade:c.planned_pour_date)}</div><div><span>${pour?'Concrete qty. (m³)':'Submitted'}</span>${pour?esc(c.proposed_volume_m3)+' planned'+(c.actual_qty_m3!=null?' · <b>'+esc(c.actual_qty_m3)+' poured</b>':''):esc(c.created_at)}</div>
+        ${pour?`<div><span>Planned pour date</span>${esc(c.planned_pour_date)}</div><div><span>Pour completed</span>${esc(c.completed_at||'—')}</div>`:''}
+        ${c.linked?`<div style="grid-column:1/-1"><span>Prerequisite checklists</span>${esc(c.linked)}</div>`:''}</div>
+      ${itemsTable(c.checks,pour?'1 · Pre-pour':'')}
+      ${pour&&(c.stage2||[]).length?itemsTable(c.stage2,'2 · During concreting · 3 · Post-pour'):''}
+      <div class="qc-meta" style="border-top:1px solid #DCE3EC"><div style="grid-column:1/-1"><span>Audit results / remarks / corrective action</span>${esc([c.remarks,c.review_note,c.close_note].filter(Boolean).join(' · ')||'—')}${c.ncr_id?' · <b style="color:#B7443E">'+esc(c.ncr_id)+'</b>':''}
+        ${c.photo_ids.length?`<div style="margin-top:4px">${c.photo_ids.map((p,i)=>`<a href="#" data-ev="${esc(p)}">📷 ${i+1}</a>`).join(' ')}</div>`:''}</div></div>
+      ${resultBoxes(c)}
+      <div class="qc-sign"><div><span>Site Engineer</span>${esc(nm(c.requested_by))}<small>${esc(c.created_at)}</small></div><div><span>QA/QC Engineer</span>${esc(nm(c.closed_by||c.reviewed_by))}<small>${esc(c.closed_at||c.reviewed_at||'')}</small></div>
+        <div><span>Project Manager</span><small>&nbsp;</small></div><div><span>Consultant / authorised rep.</span>${esc(c.consultant_rep||'')}</div></div>
+      <div class="qc-note">${esc((T.header||{}).note||'')} Digital record from DPCS · ${esc(c.result)}.</div></div>`; }
+  function actions(c,review){ const k=esc(c.card_id), r=c.revision, s=String(c.status), mine=isMine(c), pour=c.type==='POUR'&&!c.legacy;
+    let h='<div class="qc-act">';
+    if(s==='REWORK'&&mine) h+=`<button class="btn pri" type="button" data-rs="${k}" data-r="${r}">Rectified — re-inspect</button>`;
+    if(s===PERMIT&&pour&&(mine||(L&&L.reviewer))) h+=`<button class="btn pri" type="button" data-pour="${k}" data-r="${r}">Record pour (during &amp; post-pour)</button>`;
+    if(review&&s==='SUBMITTED'&&!mine){ h+=`<input type="text" placeholder="${/EXCEPTION/.test(c.result)?'Reason for accepting N/A (required)':'Note (required for rectification / not accepted)'}" data-pn="${k}">`;
+      h+=pour?`<button class="btn grn" type="button" data-dec="APPROVE" data-id="${k}" data-r="${r}"${c.result==='NOT READY'?' disabled':''}>Permit to pour</button><button class="btn red" type="button" data-dec="REWORK" data-id="${k}" data-r="${r}">Rework</button>`
+        :`<button class="btn grn" type="button" data-dec="ACCEPT" data-id="${k}" data-r="${r}"${c.result==='NOT READY'?' disabled':''}>Accept</button><button class="btn red" type="button" data-dec="REWORK" data-id="${k}" data-r="${r}">Rectification</button><button class="btn red" type="button" data-dec="REJECT" data-id="${k}" data-r="${r}">Not accepted</button>`; }
+    if(review&&s==='POUR COMPLETED'&&String(c.completed_by).indexOf('('+me()+')')<0&&!mine){ h+=`<input type="text" placeholder="Close note (required for NCR)" data-pn="${k}">
+      <button class="btn grn" type="button" data-close="ACCEPT" data-id="${k}" data-r="${r}"${(c.stage2||[]).some(x=>x.answer==='NO')?' disabled':''}>Close — accepted</button><button class="btn red" type="button" data-close="NCR" data-id="${k}" data-r="${r}">Close with NCR</button>`; }
+    h+=`<button class="btn" type="button" data-print="${k}" data-r="${r}">🖨 Print / PDF</button></div><div data-stage2="${k}"></div>`;
+    return h; }
+  const findC=(id,r)=>[].concat(L.mine,L.to_review,L.recent).find(c=>c.card_id===id&&c.revision===+r);
+  function bindView(review){
+    B.querySelectorAll('[data-ev]').forEach(a=>a.onclick=e=>{ e.preventDefault(); e.stopPropagation(); dpcsPhoto.view(a.dataset.ev); });
+    B.querySelectorAll('[data-rs]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); const c=findC(b.dataset.rs,b.dataset.r);
+      P=Object.assign(blank(c.kind),{location:c.location,floor:c.floor,member_grid:c.member_grid,drawing_ref:c.drawing_ref,consultant_rep:c.consultant_rep||'',grade:c.grade,proposed_volume_m3:c.proposed_volume_m3,
+        planned_pour_date:dmy(c.planned_pour_date),inspection_date:today(),resubmit_of:c.card_id});
+      c.checks.forEach(k=>{ if(k.answer!=='NO') P.checks[k.no]={answer:k.answer,note:k.note,photos:[]}; else P.checks[k.no]={answer:'',note:'',photos:[]}; });
+      tab='new'; tabs(); drawNew(); scrim.scrollTo({top:0,behavior:'smooth'}); toast('Re-inspect the N items, then submit'); });
+    B.querySelectorAll('[data-dec]').forEach(b=>b.onclick=async e=>{ e.stopPropagation(); const id=b.dataset.id, d=b.dataset.dec, note=(B.querySelector(`[data-pn="${CSS.escape(id)}"]`)||{}).value||'';
+      if(d!=='APPROVE'&&d!=='ACCEPT'&&!note.trim()){ toast('Write the note first'); return; }
+      b.disabled=true; const x=await call({action:'pour_decide',card_id:id,revision:+b.dataset.r,decision:d,note:note.trim()});
+      if(x.ok){ toast({APPROVE:'Permit to pour given',ACCEPT:'Checklist accepted',REWORK:'Sent for rectification',REJECT:'Marked not accepted'}[d]); openId=''; await refresh(); tabs(); drawList(review); } else { b.disabled=false; toast(ERR(x.error)); } });
+    B.querySelectorAll('[data-close]').forEach(b=>b.onclick=async e=>{ e.stopPropagation(); const id=b.dataset.id, d=b.dataset.close, note=(B.querySelector(`[data-pn="${CSS.escape(id)}"]`)||{}).value||'';
+      if(d==='NCR'&&!note.trim()){ toast('Describe the non-conformance'); return; }
+      b.disabled=true; const x=await call({action:'pour_close',card_id:id,revision:+b.dataset.r,decision:d,note:note.trim()});
+      if(x.ok){ toast(x.ncr_id?'Closed · '+x.ncr_id+' raised':'Pour card closed'); openId=''; await refresh(); tabs(); drawList(review); } else { b.disabled=false; toast(ERR(x.error)); } });
+    B.querySelectorAll('[data-print]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); const c=findC(b.dataset.print,b.dataset.r); printCard(c); });
+    B.querySelectorAll('[data-pour]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); stage2(b.dataset.pour,b.dataset.r,review); });
+  }
+  function printCard(c){ const pp=document.getElementById('qcPrint'); pp.innerHTML=sheetView(c); document.body.classList.add('qcprinting');
+    const done=()=>{ document.body.classList.remove('qcprinting'); window.removeEventListener('afterprint',done); }; window.addEventListener('afterprint',done); setTimeout(()=>window.print(),60); }
+  function stage2(id,rev,review){
+    const c=findC(id,rev), items=(T.templates[c.kind]||[]).filter(t=>t.stage!=='PRE'), box=B.querySelector(`[data-stage2="${CSS.escape(id)}"]`);
+    const S2={checks:{},qty:'',at:new Date(Date.now()+330*60000).toISOString().slice(0,16),remarks:''};
+    const draw2=()=>{ let sec='', h=`<div class="qc-sheet" style="margin-top:10px"><div class="qc-h"><span>Record the pour · ${esc(c.card_id)}</span><span>Y · N · N/A</span></div>`;
+      items.forEach(t=>{ const k=S2.checks[t.no]||{}, a=k.answer||''; if(t.section!==sec){ sec=t.section; h+=`<div class="qc-sec">${t.stage==='DURING'?'2. ':'3. '}${esc(sec)}</div>`; }
+        h+=`<div class="qc-row${a==='NO'?' bad':a==='NA'?' na':''}"><span class="no">${t.no}</span><span class="t">${esc(t.text)}</span>
+          <span class="qc-yn"><button type="button" data-n2="${t.no}" data-a="YES" class="y${a==='YES'?' on':''}">Y</button><button type="button" data-n2="${t.no}" data-a="NO" class="n${a==='NO'?' on':''}">N</button><button type="button" data-n2="${t.no}" data-a="NA" class="na${a==='NA'?' on':''}">N/A</button></span>
+          <div class="cm"><input type="text" data-c2="${t.no}" value="${esc(k.note||'')}" placeholder="${a==='NO'?'Non-conformance (required)':a==='NA'?'Justification (required)':'Comments / actual (e.g. slump 110 mm, 6 cubes)'}">
+          ${a==='NO'||(k.photos||[]).length?`<div class="phrow">${(k.photos||[]).map(p=>`<span class="ph"><img src="${p.thumb}" alt="Photo"></span>`).join('')}<button class="add-row ph-add" type="button" data-p2="${t.no}">📷 Photo</button></div>`:''}</div></div>`; });
+      h+=`<div class="qc-fields"><div><label class="f">Actual quantity poured (m³) <span class="star">*</span></label><input type="number" inputmode="decimal" min="0" step="any" id="s2q" value="${esc(S2.qty)}" placeholder="Planned ${esc(c.proposed_volume_m3)}"></div>
+        <div><label class="f">Pour completed at <span class="star">*</span></label><input type="datetime-local" id="s2t" value="${esc(S2.at)}"></div>
+        <div style="grid-column:1/-1"><label class="f">Defects / interruptions (optional)</label><input type="text" id="s2r" value="${esc(S2.remarks)}"></div></div>
+        <div class="qc-act"><button class="btn pri" type="button" id="s2go">Submit pour record to QA</button><button class="btn" type="button" id="s2x">Cancel</button></div></div>`;
+      box.innerHTML=h;
+      box.querySelectorAll('[data-n2]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); const k=S2.checks[b.dataset.n2]||(S2.checks[b.dataset.n2]={note:'',photos:[]}); k.answer=b.dataset.a; draw2(); });
+      box.querySelectorAll('[data-c2]').forEach(el=>{ el.onclick=e=>e.stopPropagation(); el.oninput=()=>{ (S2.checks[el.dataset.c2]||(S2.checks[el.dataset.c2]={answer:'',photos:[]})).note=el.value; }; });
+      box.querySelectorAll('[data-p2]').forEach(b=>b.onclick=async e=>{ e.stopPropagation(); const p=await dpcsPhoto.take('POUR_CARD','pour '+b.dataset.p2); if(p){ (S2.checks[b.dataset.p2]=S2.checks[b.dataset.p2]||{answer:'',note:'',photos:[]}).photos.push(p); draw2(); } });
+      ['s2q','s2t','s2r'].forEach(i=>{ const el=document.getElementById(i); el.onclick=e=>e.stopPropagation(); el.oninput=()=>{ S2[{s2q:'qty',s2t:'at',s2r:'remarks'}[i]]=el.value; }; });
+      document.getElementById('s2x').onclick=e=>{ e.stopPropagation(); box.innerHTML=''; };
+      document.getElementById('s2go').onclick=async e=>{ e.stopPropagation(); const b=e.target; b.disabled=true;
+        const x=await call({action:'pour_complete',card_id:id,revision:+rev,actual_qty_m3:S2.qty,completed_at:S2.at,remarks:S2.remarks,
+          checks:items.map(t=>{ const k=S2.checks[t.no]||{}; return {no:t.no,answer:k.answer||'',note:k.note||'',photos:(k.photos||[]).map(p=>p.id)}; })});
+        if(x.ok){ toast('Pour recorded · '+x.actual_qty_m3+' m³ ('+(x.variance_m3>=0?'+':'')+x.variance_m3+' vs planned)'); openId=''; await refresh(); tabs(); drawList(review); } else { b.disabled=false; toast(ERR(x.error)); } }; };
+    draw2(); box.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  /* ---------- review panel inside Project control ---------- */
+  window.pourReview=async function(box){ box.innerHTML='<div class="card note">QC review is in the QC Cards tab.</div>'; const c=document.getElementById('ctrlScrim'); if(c) c.style.display='none'; await open('review'); };
   pourBtn();
 })();
 </script>
+
+<div id="taskScrim" class="pg" style="position:fixed;inset:0;z-index:150;background:#F5F7FB;display:none;overflow:auto">
+  <div class="pghead">
+    <div class="pgrow"><div style="flex:1;min-width:0"><b>Tasks &amp; delegation</b><div class="pgsub" id="tkWho">Assigned work · acknowledge · report against it · scorecard</div></div></div>
+    <div class="pgtabs" id="tkTabs"></div>
+  </div>
+  <div class="pgbody"><div id="tkBody"></div></div>
+</div>
+<style>
+.tk{border:1px solid #DCE3EC;border-radius:12px;background:#fff;padding:12px;margin-bottom:10px;border-left:4px solid #052585}
+.tk.hi{border-left-color:#B7443E}.tk.lo{border-left-color:#9DAED2}.tk.done{opacity:.78;border-left-color:#2E7D4F}
+.tk .h{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}.tk .h b{font-size:15px;color:#061A59}
+.tk .s{font-size:12.5px;color:#5B6B7C;margin-top:3px}.tk .i{font-size:13.5px;margin-top:6px;color:#182634}
+.tk .bar{height:8px;background:#E6EBF3;border-radius:4px;overflow:hidden;margin-top:8px;position:relative}.tk .bar i{position:absolute;left:0;top:0;bottom:0;background:#9DAED2}.tk .bar i.v{background:#2E7D4F}
+.tk .q{display:flex;justify-content:space-between;font-size:12px;color:#5B6B7C;margin-top:4px}
+.tk .a{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.tk .a .btn{flex:1 1 auto;min-height:40px;font-size:13px}.tk .a input{flex:1 1 100%;min-height:40px}
+.tkst{font-size:10.5px;font-weight:800;border-radius:10px;padding:3px 8px;white-space:nowrap}
+.tkst.as{background:#FFF6D6;color:#9A6A00}.tkst.ak{background:#EEF2FB;color:#052585}.tkst.rp{background:#E3F1FA;color:#0F5E86}.tkst.vc{background:#E7F3EC;color:#2E7D4F}.tkst.dn{background:#E7F3EC;color:#2E7D4F}.tkst.cx{background:#EEF1F6;color:#5B6B7C}.tkst.od{background:#FBEAEA;color:#B7443E}
+.tkchips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.tkchips button{border:1.5px solid #D5DEF2;background:#fff;border-radius:16px;padding:6px 12px;font-size:12.5px;font-weight:700;color:#061A59}.tkchips button.on{background:#052585;border-color:#052585;color:#fff}
+.tkseg{display:flex;gap:6px}.tkseg button{flex:1;min-height:42px;border:1.5px solid #D5DEF2;background:#fff;border-radius:10px;font-weight:800;color:#061A59}.tkseg button.on{background:#052585;border-color:#052585;color:#fff}
+.tkhint{font-size:12.5px;border-radius:8px;padding:8px 10px;margin-top:6px;background:#EEF2FB;color:#052585}.tkhint.w{background:#FFF5E6;color:#9A6A00}
+.tkduty{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.tkduty button{border:1px dashed #052585;background:#F4F8FD;color:#052585;border-radius:8px;padding:6px 9px;font-size:12px;text-align:left}
+.sc{display:grid;grid-template-columns:52px 1fr;gap:10px;align-items:center;padding:10px 0;border-top:1px solid #EEF1F6}.sc:first-child{border-top:0}
+.sc .g{width:52px;height:52px;border-radius:12px;display:grid;place-items:center;font-weight:900;font-size:22px;color:#fff;background:#9DAED2}
+.sc .g.A{background:#2E7D4F}.sc .g.B{background:#052585}.sc .g.C{background:#B87920}.sc .g.D{background:#B7443E}
+.sc .g small{display:block;font-size:10px;font-weight:700;margin-top:-6px}
+.sc b{color:#061A59}.sc .s{font-size:12px;color:#5B6B7C}
+.scp{display:grid;grid-template-columns:1fr 54px;gap:2px 8px;font-size:11.5px;margin-top:6px;color:#182634}.scp .bb{height:6px;background:#E6EBF3;border-radius:3px;overflow:hidden;margin-top:5px}.scp .bb i{display:block;height:100%;background:#052585}
+.scp .r{text-align:right;color:#5B6B7C}
+</style>
+<script>
+(function(){
+  const scrim=document.getElementById('taskScrim'), B=document.getElementById('tkBody'), TB=document.getElementById('tkTabs');
+  let M=null, L=null, SC=null, tab='mine', filt='open', F=null;
+  const call=b=>{ const a=auth(); return a?callApi(Object.assign({token:a.token},b)):Promise.resolve({ok:false,error:'SIGNIN_REQUIRED'}); };
+  const ERR=e=>({UNKNOWN_ACTION:'The server is not updated yet (DPCS v14 needed).',OFFLINE:'No internet.'}[e]||e);
+  const nm=s=>String(s||'').split(' (')[0];
+  const today=()=>new Date(Date.now()+330*60000).toISOString().slice(0,10);
+  window.taskBtn=function(){
+    const a=auth(), row=document.querySelector('.top .row'); let t=document.getElementById('btnTasks');
+    if(!a||!row){ if(t) t.remove(); return; }
+    if(!t){ t=document.createElement('button'); t.id='btnTasks'; t.type='button'; t.className='hbtn'; t.innerHTML='🎯<span class="hl"> Tasks</span><em class="nb" id="tkBadge"></em>'; t.title='My tasks';
+      row.appendChild(t); t.onclick=()=>open(); }
+    badge();
+  };
+  async function badge(){ const r=await call({action:'task_list'}); if(!r.ok) return; L=r; const n=r.mine.filter(a=>a.status==='ASSIGNED').length, el=document.getElementById('tkBadge'); if(el) el.textContent=n||''; }
+  const blankF=()=>({kind:'WORK',assignee_id:'',location:'',floor:'',activity:'',target_qty:'',unit:'',task_date:today(),due_date:today(),priority:'Normal',instruction:''});
+  async function open(t){ scrim.style.display='block'; if(t) tab=t; B.innerHTML='<div class="card note">Loading tasks…</div>';
+    const r=await call({action:'task_list'}); if(!r.ok){ B.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; TB.innerHTML=''; return; } L=r;
+    if(r.can_assign&&!M){ const m=await call({action:'task_meta'}); if(m.ok) M=m; }
+    if(!F) F=blankF(); tabs(); draw(); }
+  window.taskOpen=open;
+  function tabs(){
+    const pm=L&&L.can_assign, c=L&&L.counts||{};
+    const tt=[['mine','My tasks'+(L.mine.filter(a=>a.open).length?' <span class="ctbadge">'+L.mine.filter(a=>a.open).length+'</span>':'')]]
+      .concat(pm?[['assign','＋ Assign'],['team','Team tasks'+(c.overdue?' <span class="ctbadge">'+c.overdue+'</span>':'')]]:[]).concat([['score',pm?'Scorecard':'My score']]);
+    TB.innerHTML=tt.map(x=>`<button type="button" class="pgt${tab===x[0]?' on':''}" data-t="${x[0]}">${x[1]}</button>`).join('');
+    TB.querySelectorAll('[data-t]').forEach(b=>b.onclick=async()=>{ tab=b.dataset.t; if(tab!=='assign'){ B.innerHTML='<div class="card note">Loading…</div>'; const r=await call({action:'task_list'}); if(r.ok) L=r; } tabs(); draw(); scrim.scrollTo({top:0}); });
+  }
+  function draw(){ if(tab==='mine') drawMine(); else if(tab==='assign') drawAssign(); else if(tab==='team') drawTeam(); else drawScore(); }
+  function st(a){ if(a.overdue&&a.open) return '<span class="tkst od">OVERDUE</span>';
+    return {ASSIGNED:'<span class="tkst as">NEW – ACKNOWLEDGE</span>',ACKNOWLEDGED:'<span class="tkst ak">ACKNOWLEDGED</span>',REPORTED:'<span class="tkst rp">REPORTED – PM TO VERIFY</span>',
+      'VERIFIED – CLOSE':'<span class="tkst vc">VERIFIED – MARK DONE</span>',DONE:'<span class="tkst dn">DONE</span>','PARTLY DONE':'<span class="tkst cx">CLOSED SHORT</span>',CANCELLED:'<span class="tkst cx">CANCELLED</span>'}[a.display]||'<span class="tkst ak">'+esc(a.display)+'</span>'; }
+  function card(a,team){
+    const work=a.kind==='WORK', pct=work&&a.target_qty?Math.min(100,a.reported_qty/a.target_qty*100):0, vp=work&&a.target_qty?Math.min(100,a.verified_qty/a.target_qty*100):0;
+    const cls=a.open?(a.priority==='High'?' hi':a.priority==='Low'?' lo':''):' done';
+    let act='';
+    if(!team&&a.open){
+      if(a.status==='ASSIGNED') act+=`<button class="btn pri" type="button" data-ack="${esc(a.assignment_id)}">✔ Acknowledge</button>`;
+      if(work) act+=`<button class="btn${a.status==='ASSIGNED'?'':' pri'}" type="button" data-rep="${esc(a.assignment_id)}">📝 Report progress</button>`;
+      if(!work||a.display==='VERIFIED – CLOSE') act+=(!work?`<input type="text" placeholder="What was done (required)" data-dn="${esc(a.assignment_id)}">`:'')+`<button class="btn grn" type="button" data-done="${esc(a.assignment_id)}">Mark done</button>`;
+    }
+    if(team&&a.open){ act+=`<input type="text" placeholder="Note (required to close short / cancel)" data-dn="${esc(a.assignment_id)}">`;
+      act+=work?`<button class="btn${a.display==='VERIFIED – CLOSE'?' grn':''}" type="button" data-done="${esc(a.assignment_id)}">${a.display==='VERIFIED – CLOSE'?'Close – done':'Close short'}</button>`:`<button class="btn" type="button" data-done="${esc(a.assignment_id)}">Mark done</button>`;
+      act+=`<button class="btn red" type="button" data-cx="${esc(a.assignment_id)}">Cancel</button>`; }
+    return `<div class="tk${cls}"><div class="h"><div><b>${work?esc(a.activity):'Duty'}${a.priority==='High'?' <span style="color:#B7443E">●</span>':''}</b>
+      <div class="s">${a.block?'<span class="ctblk">'+esc(a.block)+'</span>':''}${esc(a.location||'Site')}${a.floor?' · '+esc(a.floor):''} · due <b>${esc(a.due_date)}</b>${team?' · <b>'+esc(a.assignee_name)+'</b> ('+esc(a.assignee_role)+')':' · from '+esc(nm(a.assigned_by))}</div></div>${st(a)}</div>
+      ${a.instruction?`<div class="i">${esc(a.instruction)}</div>`:''}
+      ${work?`<div class="bar"><i style="width:${pct}%"></i><i class="v" style="width:${vp}%"></i></div><div class="q"><span>Target <b>${esc(a.target_qty)} ${esc(a.unit)}</b></span><span>Reported ${esc(a.reported_qty)} · <b style="color:#2E7D4F">Verified ${esc(a.verified_qty)}</b>${a.returned?' · '+a.returned+' returned':''}</span></div>
+        <div class="s">${esc(a.assignment_id)} · WBS ${esc(a.wbs_id||'—')}${a.balance_at_assign!=null?' · balance at assign '+esc(a.balance_at_assign):''}${a.last_report?' · last report '+esc(a.last_report):''}</div>`:`<div class="s">${esc(a.assignment_id)}</div>`}
+      ${a.done_note?`<div class="s">📌 ${esc(nm(a.done_by))}: ${esc(a.done_note)}</div>`:''}
+      ${act?`<div class="a">${act}</div>`:''}</div>`;
+  }
+  function bindCards(team){
+    B.querySelectorAll('[data-ack]').forEach(b=>b.onclick=async()=>{ b.disabled=true; const r=await call({action:'task_ack',assignment_id:b.dataset.ack}); toast(r.ok?'Acknowledged':ERR(r.error)); await reload(); });
+    B.querySelectorAll('[data-rep]').forEach(b=>b.onclick=()=>{ const a=L.mine.find(x=>x.assignment_id===b.dataset.rep); reportFor(a); });
+    B.querySelectorAll('[data-done]').forEach(b=>b.onclick=async()=>{ const n=B.querySelector(`[data-dn="${CSS.escape(b.dataset.done)}"]`); b.disabled=true;
+      const r=await call({action:'task_done',assignment_id:b.dataset.done,note:n?n.value.trim():''}); toast(r.ok?('Task '+r.status.toLowerCase()):ERR(r.error)); if(!r.ok) b.disabled=false; else await reload(); });
+    B.querySelectorAll('[data-cx]').forEach(b=>b.onclick=async()=>{ const n=B.querySelector(`[data-dn="${CSS.escape(b.dataset.cx)}"]`); if(!n||!n.value.trim()){ toast('Write the reason'); return; } b.disabled=true;
+      const r=await call({action:'task_cancel',assignment_id:b.dataset.cx,note:n.value.trim()}); toast(r.ok?'Cancelled':ERR(r.error)); if(!r.ok) b.disabled=false; else await reload(); });
+  }
+  async function reload(){ const r=await call({action:'task_list'}); if(r.ok) L=r; tabs(); draw(); badge(); }
+  /** Pre-fills an activity in today's daily report linked to this task (assignment_id is sent with the report). */
+  function reportFor(a){
+    if(typeof S==='undefined'){ toast('Open the report form first'); return; }
+    let e=S.entries.find(x=>x.assignment_id===a.assignment_id);
+    if(!e){ const blankFirst=S.entries.length===1&&!S.entries[0].activity&&!S.entries[0].location; e=blankFirst?S.entries[0]:blankEntry(); if(!blankFirst) S.entries.push(e);
+      Object.assign(e,{activity:a.activity,location:a.location,floor:a.floor||e.floor,unit:a.unit,assignment_id:a.assignment_id,desc:e.desc||a.instruction||''}); }
+    S.entries.forEach(x=>x._c=x!==e); renderEntries(); autosave();
+    scrim.style.display='none'; const i=S.entries.indexOf(e); setTimeout(()=>scrollToAct(i),80);
+    toast('Enter today\'s quantity for '+a.activity+' — it is linked to your task');
+  }
+  function drawMine(){
+    const open=L.mine.filter(a=>a.open), closed=L.mine.filter(a=>!a.open);
+    B.innerHTML=`<div class="card"><h2>Open (${open.length})</h2>${open.length?open.map(a=>card(a,false)).join(''):'<p class="note">No open tasks. Your Project Manager assigns work here.</p>'}
+      <p class="note">Acknowledge each new task. “Report progress” adds it to today’s report; the task closes when the PM-verified quantity reaches the target.</p></div>
+      ${closed.length?`<div class="card"><h2>Completed / closed (${closed.length})</h2>${closed.slice(0,20).map(a=>card(a,false)).join('')}</div>`:''}`;
+    bindCards(false);
+  }
+  function drawTeam(){
+    const c=L.counts||{}, f={open:a=>a.open,overdue:a=>a.overdue,ack:a=>a.status==='ASSIGNED',close:a=>a.display==='VERIFIED – CLOSE',all:()=>true}[filt];
+    const list=L.team.filter(f);
+    B.innerHTML=`<div class="card"><div class="ctk" style="margin-bottom:12px"><div><b>${c.open||0}</b><span>Open</span></div><div style="border-top-color:#B7443E"><b>${c.overdue||0}</b><span>Overdue</span></div>
+      <div style="border-top-color:#B87920"><b>${c.awaiting_ack||0}</b><span>Not acknowledged</span></div><div style="border-top-color:#2E7D4F"><b>${c.to_close||0}</b><span>Verified – to close</span></div></div>
+      <div class="tkchips">${[['open','Open'],['overdue','Overdue'],['ack','Not acknowledged'],['close','To close'],['all','All (14 days)']].map(x=>`<button type="button" data-f="${x[0]}" class="${filt===x[0]?'on':''}">${x[1]}</button>`).join('')}</div>
+      ${list.length?list.map(a=>card(a,true)).join(''):'<p class="note">Nothing here.</p>'}</div>`;
+    B.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{ filt=b.dataset.f; drawTeam(); });
+    bindCards(true);
+  }
+  const opt=(arr,v,ph)=>'<option value="">'+ph+'</option>'+arr.map(x=>{ const val=Array.isArray(x)?x[0]:x, lab=Array.isArray(x)?x[1]:x; return `<option value="${esc(val)}"${val===v?' selected':''}>${esc(lab)}</option>`; }).join('');
+  function drawAssign(){
+    if(!M){ B.innerHTML='<div class="card note">Could not load the team list.</div>'; return; }
+    const s=M.staff.find(x=>x.id===F.assignee_id), locs=M.locations.filter(l=>!s||!s.blocks.length||!l.block||l.block.split('+').some(b=>s.blocks.indexOf(b)>=0));
+    const L1=locs.find(l=>l.name===F.location), wbs=L1?M.wbs.filter(w=>w.workfront_id===L1.wf):[];
+    const w=wbs.find(x=>x.activity.toLowerCase()===String(F.activity).toLowerCase())||wbs.find(x=>F.activity&&(x.activity.toLowerCase().indexOf(F.activity.toLowerCase())>=0||F.activity.toLowerCase().indexOf(x.activity.toLowerCase())>=0));
+    const acts=wbs.length?wbs.map(x=>[x.activity,x.activity+' · bal '+x.balance+' '+x.unit]):M.activities;
+    const duties=s?(M.duties[s.role]||[]):[];
+    if(w&&!F.unit) F.unit=w.unit;
+    B.innerHTML=`<div class="card"><h2>Delegate work</h2>
+      <div class="tkseg"><button type="button" data-k="WORK" class="${F.kind==='WORK'?'on':''}">Quantity work (WBS)</button><button type="button" data-k="DUTY" class="${F.kind==='DUTY'?'on':''}">Duty / instruction</button></div>
+      <div class="grid" style="margin-top:12px">
+        <div class="full"><label class="f">Assign to <span class="req">*</span></label><select data-v="assignee_id">${opt(M.staff.map(x=>[x.id,x.name+' · '+x.role+(x.blocks.length?' · '+x.blocks.join(','):' · all towers')]),F.assignee_id,'Choose staff…')}</select></div>
+        <div><label class="f">Location${F.kind==='WORK'?' <span class="req">*</span>':''}</label><select data-v="location">${opt(locs.map(l=>[l.name,l.name+(l.block&&l.name.indexOf(l.block)<0?' ('+l.block+')':'')]),F.location,'Location…')}</select></div>
+        <div><label class="f">Floor / level</label><select data-v="floor">${opt((l=>l.base.concat(l.add))(lists('floors')),F.floor,'Any')}</select></div>
+        ${F.kind==='WORK'?`<div class="full"><label class="f">Activity (from the WBS of this location) <span class="req">*</span></label><select data-v="activity">${opt(acts,F.activity,F.location?'Activity…':'Choose location first')}</select>
+          ${w?`<div class="tkhint">WBS <b>${esc(w.wbs_id)}</b> · BOQ ${esc(w.boq)} ${esc(w.unit)} − verified ${esc(w.verified)} = <b>balance ${esc(w.balance)} ${esc(w.unit)}</b>${w.planned_finish?' · plan '+esc(w.planned_start)+' → '+esc(w.planned_finish):''} · ${esc(w.basis||'')}</div>`
+            :F.activity?'<div class="tkhint w">No WBS line for this location + activity — the task is allowed but will show as UNMAPPED.</div>':''}</div>
+        <div><label class="f">Target qty <span class="req">*</span></label><input type="number" inputmode="decimal" min="0" step="any" data-v="target_qty" value="${esc(F.target_qty)}"${w?` max="${w.balance}"`:''}></div>
+        <div><label class="f">Unit <span class="req">*</span></label><select data-v="unit">${opt((l=>l.base.concat(l.add))(lists('units')),F.unit,'Unit…')}</select></div>`:''}
+        <div><label class="f">Start date</label><input type="date" data-v="task_date" value="${esc(F.task_date)}"></div>
+        <div><label class="f">Due date</label><input type="date" data-v="due_date" value="${esc(F.due_date)}"></div>
+        <div class="full"><label class="f">Priority</label><div class="tkseg">${['High','Normal','Low'].map(p=>`<button type="button" data-p="${p}" class="${F.priority===p?'on':''}">${p}</button>`).join('')}</div></div>
+        <div class="full"><label class="f">Instruction${F.kind==='DUTY'?' <span class="req">*</span>':' (optional)'}</label><textarea data-v="instruction" placeholder="${F.kind==='DUTY'?'What exactly must be done':'e.g. Complete bay 3 PCC before 5 pm'}">${esc(F.instruction)}</textarea>
+          ${duties.length?`<div class="note" style="margin-top:6px">Typical ${esc(s.role)} duties (October Control Pack):</div><div class="tkduty">${duties.map(d=>`<button type="button" data-duty="${esc(d)}">${esc(d)}</button>`).join('')}</div>`:''}</div>
+      </div>
+      <button class="btn pri" type="button" id="tkGo" style="width:100%;margin-top:14px;min-height:48px">Assign task</button>
+      <p class="note">The assignee sees it under My tasks and must acknowledge. Quantity tasks close only on PM-verified quantity; target cannot exceed the WBS balance.</p></div>`;
+    B.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{ F.kind=b.dataset.k; drawAssign(); });
+    B.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{ F.priority=b.dataset.p; drawAssign(); });
+    B.querySelectorAll('[data-duty]').forEach(b=>b.onclick=()=>{ F.instruction=b.dataset.duty; if(F.kind==='WORK'&&!F.activity) F.kind='DUTY'; drawAssign(); });
+    B.querySelectorAll('[data-v]').forEach(el=>el.oninput=el.onchange=()=>{ F[el.dataset.v]=el.value; if(el.tagName==='SELECT'){ if(el.dataset.v==='location') { F.activity=''; F.unit=''; } if(el.dataset.v==='activity') F.unit=''; drawAssign(); } });
+    document.getElementById('tkGo').onclick=async e=>{ e.target.disabled=true; const r=await call(Object.assign({action:'task_create'},F)); e.target.disabled=false;
+      if(!r.ok){ toast(ERR(r.error)); confirmBox('Not assigned',`<p style="margin:0">${esc(ERR(r.error))}</p>`,[['OK','pri']]); return; }
+      const who=(M.staff.find(x=>x.id===F.assignee_id)||{}).name||'';
+      confirmBox('Task assigned',`<p style="margin:0">${esc(r.assignment_id)} → <b>${esc(who)}</b></p>${r.warning?'<p class="note" style="color:#9A6A00">'+esc(r.warning)+'</p>':''}`,[['OK','pri']]);
+      const keep={assignee_id:F.assignee_id,location:F.location,task_date:F.task_date,due_date:F.due_date}; F=Object.assign(blankF(),keep,{kind:F.kind});
+      const m=await call({action:'task_meta'}); if(m.ok) M=m; const l=await call({action:'task_list'}); if(l.ok) L=l; tabs(); drawAssign(); };
+  }
+  async function drawScore(){
+    B.innerHTML='<div class="card note">Calculating…</div>';
+    const r=await call({action:'scorecard'}); if(!r.ok){ B.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return; } SC=r;
+    B.innerHTML=`<div class="card"><h2>${L.can_assign?'Team scorecard':'My scorecard'} · ${esc(r.period.start)} → ${esc(r.period.end)}</h2>
+      ${r.rows.map(x=>`<div class="sc"><div class="g ${esc(x.grade)}">${esc(x.grade)}<small>${x.score==null?'no data':x.score}</small></div><div><b>${esc(x.name)}</b> <span class="s">· ${esc(x.role)}${x.blocks&&x.blocks.length?' · '+esc(x.blocks.join(',')):''} · ${x.open_tasks} open${x.overdue?' · <b style="color:#B7443E">'+x.overdue+' overdue</b>':''}</span>
+        <div class="scp">${x.parts.map(p=>`<div>${esc(p.label)} <span class="s">(${p.weight})</span><div class="bb"><i style="width:${p.pct==null?0:p.pct}%"></i></div></div><div class="r">${p.pct==null?'—':p.pct+'%'}<br>${p.done}/${p.of}</div>`).join('')}</div></div></div>`).join('')||'<p class="note">No staff.</p>'}
+      <p class="note" style="margin-top:10px">${esc(r.basis)}</p></div>`;
+  }
+  taskBtn();
+})();
+</script>
+
 <div id="deskScrim" style="position:fixed;inset:0;z-index:150;background:#F5F7FB;display:none;overflow:auto">
   <div style="position:sticky;top:0;background:#052585;color:#fff;border-bottom:3px solid #FECA08;z-index:2">
     <div style="padding:12px 16px 4px;display:flex;align-items:center;gap:10px">
@@ -1661,6 +2025,31 @@ window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); dpcsInsta
   document.body.appendChild(b);
 });
 window.addEventListener('appinstalled',()=>{ const b=document.getElementById('dpcsInstallBtn'); if(b) b.remove(); });
+</script>
+<script>
+/* ===== v14 app shell: one tab bar for every page ===== */
+(function(){
+  const OVL=['taskScrim','pourScrim','deskScrim','ctrlScrim','teamScrim'], MAP={taskScrim:'btnTasks',pourScrim:'btnPour',deskScrim:'btnDesk',ctrlScrim:'btnCtrl',teamScrim:'btnTeam'};
+  const ORDER=['btnHome','btnTasks','btnPour','btnDesk','btnCtrl','btnTeam'];
+  const row=document.getElementById('navRow'), slot=document.getElementById('userSlot'), top=document.querySelector('.top');
+  const setH=()=>document.documentElement.style.setProperty('--navh',top.offsetHeight+'px');
+  window.addEventListener('resize',setH);
+  const shown=id=>{ const s=document.getElementById(id); return s&&s.style.display&&s.style.display!=='none'; };
+  const hideAll=()=>OVL.forEach(id=>{ const s=document.getElementById(id); if(s) s.style.display='none'; });
+  row.addEventListener('click',e=>{ if(e.target.closest('button')) hideAll(); },true);
+  document.getElementById('btnHome').onclick=()=>{ hideAll(); window.scrollTo({top:0,behavior:'smooth'}); };
+  function mark(){ const o=OVL.find(shown), act=o?MAP[o]:'btnHome';
+    row.querySelectorAll('.hbtn').forEach(b=>b.classList.toggle('on',b.id===act)); document.body.classList.toggle('ovl',!!o); setH(); }
+  const idx=b=>{ const i=ORDER.indexOf(b.id); return i<0?99:i; };
+  function arrange(){ const u=document.getElementById('btnUser'); if(u&&u.parentNode!==slot) slot.appendChild(u);
+    const bs=[...row.children], so=bs.slice().sort((a,b)=>idx(a)-idx(b)); if(so.some((b,i)=>b!==bs[i])) so.forEach(b=>row.appendChild(b));
+    const lab={btnDesk:'🗂<span class="hl"> Desk</span>',btnCtrl:'📊<span class="hl"> Control</span>',btnTeam:'👥<span class="hl"> Team</span>'};
+    Object.keys(lab).forEach(id=>{ const b=document.getElementById(id); if(b&&!b.dataset.v14){ b.dataset.v14=1; b.innerHTML=lab[id]; } });
+    mark(); }
+  new MutationObserver(arrange).observe(row,{childList:true});
+  OVL.forEach(id=>{ const s=document.getElementById(id); if(s) new MutationObserver(mark).observe(s,{attributes:true,attributeFilter:['style']}); });
+  arrange(); setTimeout(setH,300);
+})();
 </script>
 </body>
 </html>
