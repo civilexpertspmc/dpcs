@@ -243,7 +243,7 @@ const PROJECTS = [{
 }];
 
 const LOCATIONS = [
-  'Tower A1','Tower A2','Tower A3','Tower A4','Tower A5','Tower A6',
+  'Tower A1','Tower A2','Tower A3','Tower A4','Tower A5','Tower A6','Tower B1','Tower B2','Tower B3','Tower B4','Tower C1',
   'Raft-1 (A1)','Raft-2 (A2)','Raft-3 (A3+A4)','Raft-4 (A6)','Raft-5 (A5)',
   'Site / Common area','Store yard','Batching / Stacking yard'
 ];
@@ -422,6 +422,8 @@ function entryHTML(e,i){
       <div class="sub">
         <label class="f">Remarks (optional)</label>
         <textarea data-path="${P}.remarks" placeholder="Hindrance, instruction received, etc.">${esc(e.remarks)}</textarea>
+        <div class="phrow">${(e.photos||[]).map((p,k)=>`<span class="ph"><img src="${p.thumb}" alt="Photo ${k+1}"><button class="x" type="button" data-act="delPh" data-i="${i}" data-j="${k}" aria-label="Remove photo">✕</button></span>`).join('')}
+          <button class="add-row ph-add" type="button" data-act="addPh" data-i="${i}">📷 Add photo</button></div>
       </div>
     </div>
   </section>`;
@@ -459,7 +461,9 @@ function renderExtras(){
         <div><label class="f">Category</label>${selectHTML('attcats',a.category,`a.${j}.category`,null,'Category…')}</div>
         <div><label class="f">Severity</label>${selectHTML('severity',a.severity,`a.${j}.severity`,null,'Severity…')}</div>
         <div class="full"><label class="f">Location (optional)</label>${selectHTML('locations',a.location,`a.${j}.location`,null,'Location…')}</div>
-        <div class="full"><label class="f">Details</label><textarea data-path="a.${j}.text" placeholder="e.g. Concrete material shortage — cement stock for 1 day">${esc(a.text)}</textarea></div>
+        <div class="full"><label class="f">Details</label><textarea data-path="a.${j}.text" placeholder="e.g. Concrete material shortage — cement stock for 1 day">${esc(a.text)}</textarea>
+          <div class="phrow">${(a.photos||[]).map((p,k)=>`<span class="ph"><img src="${p.thumb}" alt="Photo ${k+1}"><button class="x" type="button" data-act="delAttPh" data-j="${j}" data-k="${k}" aria-label="Remove photo">✕</button></span>`).join('')}
+            <button class="add-row ph-add" type="button" data-act="addAttPh" data-j="${j}">📷 Add photo</button></div></div>
       </div>
     </div>`).join('');
   $('#extras').innerHTML = `
@@ -547,13 +551,18 @@ document.addEventListener('click',ev=>{
   if(act==='delPlan'){ S.tomorrow.splice(j,1); if(!S.tomorrow.length) S.tomorrow.push(blankPlan()); renderExtras(); autosave(); return; }
   if(act==='addAtt'){ S.attention.push(blankAtt()); renderExtras(); autosave(); return; }
   if(act==='delAtt'){ S.attention.splice(j,1); if(!S.attention.length) S.attention.push(blankAtt()); renderExtras(); autosave(); return; }
+  if(act==='addAttPh'){ const a=S.attention[j]; dpcsPhoto.take('ATTENTION',a.category||'attention').then(p=>{ if(p){ (a.photos=a.photos||[]).push(p); renderExtras(); autosave(); } }); return; }
+  if(act==='delAttPh'){ S.attention[j].photos.splice(+b.dataset.k,1); renderExtras(); autosave(); return; }
+  if(act==='addPh'){ const en=S.entries[i]; if((en.photos||[]).length>=6){ toast('Max 6 photos per activity'); return; }
+    dpcsPhoto.take('ACTIVITY',(en.activity||'activity')+' '+(en.location||'')).then(p=>{ if(p){ (en.photos=en.photos||[]).push(p); renderEntries(); autosave(); } }); return; }
+  if(act==='delPh'){ S.entries[i].photos.splice(j,1); renderEntries(); autosave(); return; }
   const e=S.entries[i];
   if(act==='addMp'){ e.manpower.push(blankMp(e.manpower[e.manpower.length-1])); }
   else if(act==='delMp'){ e.manpower.splice(j,1); if(!e.manpower.length) e.manpower.push(blankMp()); }
   else if(act==='addMc'){ e.machinery.push({type:'',location:e.location||'',hours:''}); }
   else if(act==='delMc'){ e.machinery.splice(j,1); if(!e.machinery.length) e.machOn=false; }
   else if(act==='dup'){
-    const c=JSON.parse(JSON.stringify(e)); c.id=uid('E-'); c.qty=''; c.remarks=''; c._c=false;
+    const c=JSON.parse(JSON.stringify(e)); c.id=uid('E-'); c.qty=''; c.remarks=''; c._c=false; c.photos=[];
     S.entries.forEach(x=>x._c=true); S.entries.splice(i+1,0,c); renderEntries(); autosave();
     scrollToAct(i+1); toast('Activity copied — update qty'); return;
   }
@@ -682,10 +691,10 @@ function buildRecord(){
         team_type:m.agency==='In-house team'?'IN-HOUSE':'CONTRACTOR', contractor_or_team:m.agency,
         engagement_basis:m.basis, trade:m.trade, headcount:+m.count})),
       machinery:e.machOn?e.machinery.map(m=>({machine_type:m.type,working_location:m.location,hours:num(m.hours)})):[],
-      remarks:e.remarks||''
+      remarks:e.remarks||'', photos:(e.photos||[]).map(p=>p.id)
     })),
     tomorrow_plan:S.tomorrow.filter(t=>t.location&&t.activity).map((t,k)=>({plan_no:k+1,location:t.location,activity:t.activity,target_qty:num(t.qty),unit:num(t.qty)!=null?t.unit:''})),
-    attention:S.attention.filter(a=>a.category&&a.text.trim()).map((a,k)=>({item_no:k+1,category:a.category,severity:a.severity,location:a.location||'',description:a.text.trim()})),
+    attention:S.attention.filter(a=>a.category&&a.text.trim()).map((a,k)=>({item_no:k+1,category:a.category,severity:a.severity,location:a.location||'',description:a.text.trim(),photos:(a.photos||[]).map(p=>p.id)})),
     pending_masters: JSON.parse(JSON.stringify(added))
   };
 }
@@ -764,7 +773,7 @@ function showReport(rec,keepScroll){
         <dt>Work</dt><dd>${esc(e.work_description)}</dd>
         <dt>Manpower</dt><dd>${e.manpower.length?e.manpower.map(m=>`${esc(m.contractor_or_team||'')} <small class="note">(${esc((m.engagement_basis||'').split(' (')[0])})</small> – ${esc(m.trade)} ${m.headcount}`).join('<br>')+`<br><b>Total ${e.manpower.reduce((a,m)=>a+m.headcount,0)}</b>`:'—'}</dd>
         <dt>Machinery</dt><dd>${e.machinery.length?e.machinery.map(m=>`${esc(m.machine_type)} @ ${esc(m.working_location)} – ${m.hours==null?'hours not reported':m.hours+' h'}`).join('<br>'):'—'}</dd>
-        ${e.remarks?`<dt>Remarks</dt><dd>${esc(e.remarks)}</dd>`:''}
+        ${e.remarks?`<dt>Remarks</dt><dd>${esc(e.remarks)}</dd>`:''}${(e.photos||[]).length?`<dt>Photos</dt><dd>📷 ${e.photos.length}</dd>`:''}
       </dl>
     </div>`).join('');
   $('#reportView').innerHTML=`
@@ -890,8 +899,8 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
     let b=document.getElementById('btnUser');
     if(!b){ b=document.createElement('button'); b.id='btnUser'; b.type='button'; b.className='hbtn'; row.appendChild(b);
       b.onclick=()=>confirmBox('Signed in',`<p style="margin:0">${esc(auth()?auth().name:'')}<br><span class="note">${esc(auth()?auth().mobile:'')} · ${esc(auth()?auth().role:'')}</span></p>`,
-        [['Close',''],['Sign out','',()=>{ store.del(K_AUTH); b.remove(); const tb=document.getElementById('btnTeam'); if(tb) tb.remove(); const tc=document.getElementById('btnCtrl'); if(tc) tc.remove(); showLogin('Signed out.'); }]]); }
-    b.innerHTML='👤<span class="hl"> '+esc(String(a.name).split(' ')[0])+'</span>'; b.title=a.name; if(window.teamBtn) teamBtn(); if(window.ctrlBtn) ctrlBtn();
+        [['Close',''],['Sign out','',()=>{ store.del(K_AUTH); b.remove(); const tb=document.getElementById('btnTeam'); if(tb) tb.remove(); const tc=document.getElementById('btnCtrl'); if(tc) tc.remove(); const tq=document.getElementById('btnPour'); if(tq) tq.remove(); showLogin('Signed out.'); }]]); }
+    b.innerHTML='👤<span class="hl"> '+esc(String(a.name).split(' ')[0])+'</span>'; b.title=a.name; if(window.teamBtn) teamBtn(); if(window.ctrlBtn) ctrlBtn(); if(window.pourBtn) pourBtn();
   }
   f.onsubmit=async e=>{
     e.preventDefault();
@@ -901,7 +910,7 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
     const btn=document.getElementById('lgBtn'); btn.disabled=true; msg.textContent='Signing in…'; msg.style.color='#5B6B7C';
     const j=await callApi({action:'login',mobile:m,pin:p}); btn.disabled=false;
     if(j && j.ok){
-      store.set(K_AUTH,{token:j.token,name:j.name,mobile:j.mobile,role:j.role,expires:j.expires,admin:!!j.admin,manager:!!j.manager});
+      store.set(K_AUTH,{token:j.token,name:j.name,mobile:j.mobile,role:j.role,expires:j.expires,admin:!!j.admin,manager:!!j.manager,qa:!!j.qa,pour:('qa' in j)&&(!!j.qa||/engineer|supervisor|manager|admin/i.test(j.role||''))});
       document.getElementById('lgPin').value=''; scrim.style.display='none'; userChip();
       toast('Welcome, '+j.name); if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED')) syncAll(true);
     } else { msg.textContent=ERR[j&&j.error]||('Sign-in failed: '+((j&&j.error)||'unknown')); msg.style.color='#B7443E'; }
@@ -1014,7 +1023,7 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
     load();
   };
   // refresh role/admin flag for sessions started before this update
-  const a=auth(); if(a) callApi({action:'me',token:a.token}).then(j=>{ if(j&&j.ok){ a.admin=!!j.admin; a.manager=!!j.manager; a.role=j.role; store.set(K_AUTH,a); teamBtn(); if(window.ctrlBtn) ctrlBtn(); } });
+  const a=auth(); if(a) callApi({action:'me',token:a.token}).then(j=>{ if(j&&j.ok){ a.admin=!!j.admin; a.manager=!!j.manager; a.qa=!!j.qa; a.pour=('qa' in j)&&(a.qa||/engineer|supervisor|manager|admin/i.test(j.role||'')); a.role=j.role; store.set(K_AUTH,a); teamBtn(); if(window.ctrlBtn) ctrlBtn(); if(window.pourBtn) pourBtn(); } });
   teamBtn();
 })();
 </script>
@@ -1028,10 +1037,11 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
       <button type="button" data-tab="v" class="ctt on">✔ Verify <span id="ctPend" class="ctbadge"></span></button>
       <button type="button" data-tab="r" class="ctt">📄 Reports</button>
       <button type="button" data-tab="d" class="ctt">📊 Progress</button>
+      <button type="button" data-tab="p" class="ctt">🧱 Pour <span id="ctPour" class="ctbadge"></span></button>
     </div>
   </div>
   <div style="max-width:760px;margin:0 auto;padding:12px 16px 40px">
-    <div id="ctV"></div><div id="ctR" style="display:none"></div><div id="ctD" style="display:none"></div>
+    <div id="ctV"></div><div id="ctR" style="display:none"></div><div id="ctD" style="display:none"></div><div id="ctP" style="display:none"></div>
   </div>
 </div>
 <style>
@@ -1057,7 +1067,7 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
 </style>
 <script>
 (function(){
-  const scrim=document.getElementById('ctrlScrim'), V=document.getElementById('ctV'), R=document.getElementById('ctR'), D=document.getElementById('ctD');
+  const scrim=document.getElementById('ctrlScrim'), V=document.getElementById('ctV'), R=document.getElementById('ctR'), D=document.getElementById('ctD'), P=document.getElementById('ctP');
   const call=b=>{ const a=auth(); return a?callApi(Object.assign({token:a.token},b)):Promise.resolve({ok:false,error:'SIGNIN_REQUIRED'}); };
   const n=(v,d)=>v==null||v===''?'—':(Math.round(Number(v)*Math.pow(10,d==null?2:d))/Math.pow(10,d==null?2:d)).toLocaleString('en-IN');
   const pc=v=>v==null?'—':n(v,1)+'%';
@@ -1065,15 +1075,16 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
   let tab='v';
   window.ctrlBtn=function(){
     const a=auth(), row=document.querySelector('.top .row'); let t=document.getElementById('btnCtrl');
-    if(!a||!a.manager||!row){ if(t) t.remove(); return; }
+    if(!a||!(a.manager||a.qa)||!row){ if(t) t.remove(); return; }
     if(!t){ t=document.createElement('button'); t.id='btnCtrl'; t.type='button'; t.className='hbtn'; t.innerHTML='📊<span class="hl"> Control</span>'; t.title='Project control';
       row.insertBefore(t,document.getElementById('btnTeam')||document.getElementById('btnUser')||null); t.onclick=open; }
   };
   function show(t){ tab=t; scrim.querySelectorAll('.ctt').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
-    V.style.display=t==='v'?'':'none'; R.style.display=t==='r'?'':'none'; D.style.display=t==='d'?'':'none';
-    (t==='v'?loadV:t==='r'?loadR:loadD)(); }
+    V.style.display=t==='v'?'':'none'; R.style.display=t==='r'?'':'none'; D.style.display=t==='d'?'':'none'; P.style.display=t==='p'?'':'none';
+    if(t==='p') return pourReview(P); (t==='v'?loadV:t==='r'?loadR:loadD)(); }
   scrim.querySelectorAll('.ctt').forEach(b=>b.onclick=()=>show(b.dataset.tab));
-  function open(){ scrim.style.display='block'; const a=auth(); document.getElementById('ctWho').textContent=(a?a.name+' · '+a.role:'')+' · Subhadra Towers'; show(tab); }
+  function open(){ scrim.style.display='block'; const a=auth(); document.getElementById('ctWho').textContent=(a?a.name+' · '+a.role:'')+' · Subhadra Towers';
+    const mgr=!!(a&&a.manager); scrim.querySelectorAll('.ctt').forEach(b=>b.style.display=(mgr||b.dataset.tab==='p')?'':'none'); if(!mgr) tab='p'; show(tab); }
   document.getElementById('ctClose').onclick=()=>{ scrim.style.display='none'; };
 
   /* ---------- Verify ---------- */
@@ -1089,7 +1100,7 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
         <span class="ctst ${x.status==='VERIFIED'?'v':x.status==='RETURNED'?'x':'p'}">${esc(x.status)}</span></div>
       <div style="margin-top:6px;font-size:13px">Site reported: <b>${x.qty==null?'<span style="color:#9A6A00">not reported</span>':n(x.qty)+' '+esc(x.unit)}</b> · ${x.manpower||0} Nos
         ${x.status==='VERIFIED'?` · Verified: <b style="color:#2E7D4F">${n(x.verified_qty)} ${esc(x.unit)}</b> by ${esc(String(x.verified_by).split(' (')[0])}`:''}
-        ${x.note?`<br><span class="note">Note: ${esc(x.note)}</span>`:''}
+        ${x.note?`<br><span class="note">Note: ${esc(x.note)}</span>`:''}${(x.photo_ids||[]).length?`<br>${x.photo_ids.map((p,k)=>`<a href="#" data-ev="${esc(p)}">📷 ${k+1}</a>`).join(' ')}`:''}
         ${pending&&x.wbs_match!=='MATCHED'?`<div class="ctwarn">Not mapped to a WBS line (${esc(x.wbs_match)}) — return it so the site corrects activity/floor/unit.</div>`:''}</div>
       ${pending?`<div class="ctin">
         <input type="number" inputmode="decimal" step="any" min="0" placeholder="Verified qty${x.unit?' ('+esc(x.unit)+')':''}" data-q="${esc(x.entry_id)}" value="${x.qty==null?'':esc(x.qty)}" style="flex:1;min-width:120px"${x.wbs_match!=='MATCHED'?' disabled':''}>
@@ -1105,6 +1116,7 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
       if(decision==='VERIFY'&&q.value===''){ toast('Enter the verified quantity'); q.focus(); return; }
       const r=await call({action:'verify_decide',entry_id:id,decision,verified_qty:q?q.value:'',note:nt.value.trim(),expected_status:'PENDING'});
       if(r.ok){ toast(decision==='VERIFY'?'Verified':'Returned to site'); loadV(); } else toast(ERR(r.error)); };
+    V.querySelectorAll('[data-ev]').forEach(a=>a.onclick=e=>{ e.preventDefault(); dpcsPhoto.view(a.dataset.ev); });
     V.querySelectorAll('[data-ok]').forEach(b=>b.onclick=()=>decide(b.dataset.ok,'VERIFY'));
     V.querySelectorAll('[data-ret]').forEach(b=>b.onclick=()=>decide(b.dataset.ret,'RETURN'));
   }
@@ -1166,6 +1178,164 @@ if(store.get(K_DONE,[]).some(r=>r.sync!=='SYNCED') && endpoint() && auth()) sync
           <div class="ctbar" style="margin-top:3px">${bar(b.planned,'#9DAED2')}</div><div class="ctbar" style="margin-top:3px">${bar(b.reported,'#FECA08')}${bar(b.verified,'#052585')}</div></div>`).join('')}</div>
       <div class="card"><h2>This month's milestones</h2>${s.month_milestones.length?s.month_milestones.map(m=>`<div class="ctrow"><span class="ctblk">${esc(m.block)}</span>${esc(m.milestone)} <span class="note">· ${esc(m.status)}</span></div>`).join(''):'<p class="note">None listed.</p>'}</div>`;
   }
+})();
+</script>
+<div id="pourScrim" style="position:fixed;inset:0;z-index:150;background:#F5F7FB;display:none;overflow:auto">
+  <div style="position:sticky;top:0;background:#052585;color:#fff;border-bottom:3px solid #FECA08;padding:12px 16px;display:flex;align-items:center;gap:10px;z-index:2">
+    <div style="flex:1"><b style="font-size:16px">Pour card &amp; checklist</b><div style="font-size:11px;opacity:.85">Permit to pour · QA / PM approval</div></div>
+    <button type="button" id="pcClose" style="background:#fff;color:#052585;border:0;border-radius:8px;padding:8px 14px;font-weight:700">Close</button>
+  </div>
+  <div style="max-width:760px;margin:0 auto;padding:12px 16px 40px">
+    <div id="pcForm"></div>
+    <div class="card"><h2 style="display:flex;justify-content:space-between;align-items:center">My pour cards <button type="button" class="btn" id="pcRefresh" style="flex:none;min-height:34px;padding:4px 12px;font-size:12px">Refresh</button></h2><div id="pcMine" class="note">Loading…</div></div>
+  </div>
+</div>
+<style>
+.pc-kinds{display:flex;gap:6px;flex-wrap:wrap}.pc-kinds button{flex:1;min-width:100px;min-height:44px;border:2px solid #DCE3EC;background:#fff;border-radius:10px;font-weight:700;color:#061A59}
+.pc-kinds button.on{border-color:#052585;background:#EEF2FB}
+.chk{border-top:1px solid #DCE3EC;padding:10px 0}.chk:first-child{border-top:0}
+.chk .q{font-size:14px;color:#182634}.chk .q b{color:#052585;margin-right:4px}.chk .crit{font-size:10px;font-weight:800;color:#9A6A00;margin-left:4px}
+.yn{display:flex;gap:6px;margin-top:8px}.yn button{flex:1;min-height:42px;border:2px solid #DCE3EC;background:#fff;border-radius:10px;font-weight:800;font-size:14px;color:#5B6B7C}
+.yn button.on.y{border-color:#2E7D4F;background:#E7F3EC;color:#2E7D4F}.yn button.on.n{border-color:#B7443E;background:#FBEAEA;color:#B7443E}.yn button.on.na{border-color:#9A6A00;background:#FFF6D6;color:#9A6A00}
+.phrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}.ph{position:relative;width:64px;height:64px}.ph img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid #DCE3EC}
+.ph .x{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#B7443E;color:#fff;border:0;font-size:12px;line-height:22px;padding:0}
+.ph-add{flex:none!important;width:auto!important;padding:8px 12px!important;margin:0!important}
+.pcst{font-size:11px;font-weight:800;border-radius:10px;padding:2px 8px;white-space:nowrap}
+.pcst.ok{background:#E7F3EC;color:#2E7D4F}.pcst.rw{background:#FBEAEA;color:#B7443E}.pcst.wt{background:#FFF6D6;color:#9A6A00}
+</style>
+<script>
+/* ---------- shared photo helpers (daily report + pour card) ---------- */
+window.dpcsPhoto={
+  pick(){ return new Promise(res=>{ const i=document.createElement('input'); i.type='file'; i.accept='image/*'; i.setAttribute('capture','environment');
+    i.onchange=()=>res(i.files&&i.files[0]||null); i.click(); }); },
+  shrink(file,max,q){ return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onerror=rej; fr.onload=()=>{ const im=new Image(); im.onerror=rej; im.onload=()=>{
+    const k=Math.min(1,max/Math.max(im.width,im.height)), c=document.createElement('canvas'); c.width=Math.round(im.width*k); c.height=Math.round(im.height*k);
+    c.getContext('2d').drawImage(im,0,0,c.width,c.height); res(c.toDataURL('image/jpeg',q)); }; im.src=fr.result; }; fr.readAsDataURL(file); }); },
+  async take(refType,name){
+    const a=auth(); if(!a){ toast('Sign in first'); return null; }
+    if(!navigator.onLine){ toast('No internet — photos need a connection'); return null; }
+    const f=await this.pick(); if(!f) return null;
+    toast('Uploading photo…');
+    try{ const big=await this.shrink(f,1280,0.72), thumb=await this.shrink(f,160,0.6);
+      const r=await callApi({action:'photo_upload',token:a.token,data:big,ref_type:refType,name:name||refType});
+      if(!r.ok){ toast(r.error==='UNKNOWN_ACTION'?'Server not updated yet':('Photo failed: '+r.error)); return null; }
+      toast('Photo added'); return {id:r.evidence_id,thumb:thumb}; }catch(e){ toast('Could not read the photo'); return null; } },
+  async view(id){ const a=auth(); const r=await callApi({action:'evidence_get',token:a.token,id}); if(!r.ok){ toast(r.error); return; }
+    const w=document.createElement('div'); w.style.cssText='position:fixed;inset:0;z-index:300;background:rgba(6,26,89,.92);display:flex;align-items:center;justify-content:center;padding:12px';
+    w.innerHTML='<img src="'+r.data+'" style="max-width:100%;max-height:100%;border-radius:8px">'; w.onclick=()=>w.remove(); document.body.appendChild(w); }
+};
+(function(){
+  const scrim=document.getElementById('pourScrim'), F=document.getElementById('pcForm'), M=document.getElementById('pcMine');
+  let T=null, P=null;   // templates, current card draft
+  const call=b=>{ const a=auth(); return a?callApi(Object.assign({token:a.token},b)):Promise.resolve({ok:false,error:'SIGNIN_REQUIRED'}); };
+  const ERR=e=>({UNKNOWN_ACTION:'The server is not updated yet.',OFFLINE:'No internet.'}[e]||e);
+  window.pourBtn=function(){
+    const a=auth(), row=document.querySelector('.top .row'); let t=document.getElementById('btnPour');
+    if(!a||!row||!a.pour){ if(t) t.remove(); return; }
+    if(!t){ t=document.createElement('button'); t.id='btnPour'; t.type='button'; t.className='hbtn'; t.innerHTML='🧱<span class="hl"> Pour card</span>'; t.title='Pour card';
+      row.insertBefore(t,document.getElementById('btnCtrl')||document.getElementById('btnTeam')||document.getElementById('btnUser')||null); t.onclick=open; }
+  };
+  const blank=k=>({kind:k||'COLUMN',location:'',floor:'',member_grid:'',grade:'',drawing_ref:'',proposed_volume_m3:'',planned_pour_date:'',remarks:'',checks:{},photos:[],resubmit_of:''});
+  async function open(){ scrim.style.display='block'; if(!T){ F.innerHTML='<div class="card note">Loading checklist…</div>'; const r=await call({action:'pour_templates'}); if(!r.ok){ F.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return; } T=r; }
+    if(!P) P=blank(); draw(); list(); }
+  document.getElementById('pcClose').onclick=()=>{ scrim.style.display='none'; };
+  document.getElementById('pcRefresh').onclick=list;
+  const opt=(arr,v,ph)=>'<option value="">'+ph+'</option>'+arr.map(x=>`<option${x===v?' selected':''}>${esc(x)}</option>`).join('');
+  function draw(){
+    const tpl=T.templates[P.kind]||[];
+    const kinds=Object.keys(T.kinds).map(k=>`<button type="button" data-kind="${k}" class="${P.kind===k?'on':''}">${k==='COLUMN'?'Column / starter':k==='RAFT'?'Raft':'Beam & slab'}</button>`).join('');
+    const chk=tpl.map(t=>{ const c=P.checks[t.no]||{}; const a=c.answer||'';
+      return `<div class="chk"><div class="q"><b>${t.no}.</b>${esc(t.text)}${t.critical?'<span class="crit">CRITICAL</span>':''}</div>
+        <div class="yn"><button type="button" data-no="${t.no}" data-a="YES" class="y${a==='YES'?' on':''}">Yes</button><button type="button" data-no="${t.no}" data-a="NO" class="n${a==='NO'?' on':''}">No</button><button type="button" data-no="${t.no}" data-a="NA" class="na${a==='NA'?' on':''}">NA</button></div>
+        ${a==='NO'||a==='NA'?`<textarea data-note="${t.no}" placeholder="${a==='NO'?'What is wrong? (required)':'Why not applicable? (required)'}" style="margin-top:8px">${esc(c.note||'')}</textarea>
+        <div class="phrow">${(c.photos||[]).map((p,k)=>`<span class="ph"><img src="${p.thumb}" alt="Photo"><button class="x" type="button" data-delph="${t.no}" data-k="${k}">✕</button></span>`).join('')}
+        <button class="add-row ph-add" type="button" data-addph="${t.no}">📷 ${a==='NO'?'Add photo (required)':'Add photo'}</button></div>`:''}</div>`; }).join('');
+    const nAns=tpl.filter(t=>(P.checks[t.no]||{}).answer).length, nNo=tpl.filter(t=>(P.checks[t.no]||{}).answer==='NO').length;
+    F.innerHTML=`<div class="card"><h2>${P.resubmit_of?'Resubmit '+esc(P.resubmit_of):'New pour card'}</h2>
+      <div class="pc-kinds">${kinds}</div>
+      <div class="grid" style="margin-top:12px">
+        <div><label class="f">Location <span class="req">*</span></label><select data-f="location">${opt((l=>l.base.concat(l.add))(lists('locations')),P.location,'Select…')}</select></div>
+        <div><label class="f">Floor / level <span class="req">*</span></label><select data-f="floor">${opt((l=>l.base.concat(l.add))(lists('floors')),P.floor,'Select…')}</select></div>
+        <div class="full"><label class="f">Member / grid${P.kind==='COLUMN'?' <span class="req">*</span>':''}</label><input type="text" data-f="member_grid" value="${esc(P.member_grid)}" placeholder="${P.kind==='COLUMN'?'e.g. C12–C18, SW-3':'e.g. Grid 1–6 / A–F'}"></div>
+        <div><label class="f">Concrete grade <span class="req">*</span></label><select data-f="grade">${opt(T.grades,P.grade,'Grade…')}</select></div>
+        <div><label class="f">Proposed volume (m³) <span class="req">*</span></label><input type="number" inputmode="decimal" min="0" step="any" data-f="proposed_volume_m3" value="${esc(P.proposed_volume_m3)}"></div>
+        <div><label class="f">Planned pour date <span class="req">*</span></label><input type="date" data-f="planned_pour_date" value="${esc(P.planned_pour_date)}"></div>
+        <div><label class="f">Drawing ref / revision</label><input type="text" data-f="drawing_ref" value="${esc(P.drawing_ref)}" placeholder="e.g. ST-A3-07 R2"></div>
+      </div></div>
+      <div class="card"><h2>${esc(T.kinds[P.kind])} <span class="pill">${nAns}/${tpl.length}</span></h2>
+        <p class="note" style="margin-top:-4px">Any <b>No</b> makes the card NOT READY (rework). <b>NA</b> needs a reason. Approval = permit to pour only.</p>${chk}
+        <label class="f" style="margin-top:10px">Remarks (optional)</label><textarea data-f="remarks">${esc(P.remarks)}</textarea>
+        <div class="phrow">${P.photos.map((p,k)=>`<span class="ph"><img src="${p.thumb}" alt="Photo"><button class="x" type="button" data-delgph="${k}">✕</button></span>`).join('')}<button class="add-row ph-add" type="button" id="pcAddPh">📷 Add general photo</button></div>
+        <button class="btn pri" type="button" id="pcSubmit" style="width:100%;margin-top:14px;min-height:48px">${nNo?'Submit (will be NOT READY)':'Submit for QA approval'}</button>
+        ${P.resubmit_of?'<button class="btn" type="button" id="pcCancel" style="width:100%;margin-top:8px">Cancel resubmission</button>':''}</div>`;
+    F.querySelectorAll('[data-kind]').forEach(b=>b.onclick=()=>{ if(P.kind===b.dataset.kind) return; P.kind=b.dataset.kind; P.checks={}; draw(); });
+    F.querySelectorAll('[data-f]').forEach(el=>el.oninput=el.onchange=()=>{ P[el.dataset.f]=el.value; });
+    F.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{ const c=P.checks[b.dataset.no]||(P.checks[b.dataset.no]={note:'',photos:[]}); c.answer=b.dataset.a; draw(); });
+    F.querySelectorAll('[data-note]').forEach(el=>el.oninput=()=>{ P.checks[el.dataset.note].note=el.value; });
+    F.querySelectorAll('[data-addph]').forEach(b=>b.onclick=async()=>{ const p=await dpcsPhoto.take('POUR_CARD','check '+b.dataset.addph+' '+(P.location||'')); if(p){ P.checks[b.dataset.addph].photos.push(p); draw(); } });
+    F.querySelectorAll('[data-delph]').forEach(b=>b.onclick=()=>{ P.checks[b.dataset.delph].photos.splice(+b.dataset.k,1); draw(); });
+    F.querySelectorAll('[data-delgph]').forEach(b=>b.onclick=()=>{ P.photos.splice(+b.dataset.delgph,1); draw(); });
+    document.getElementById('pcAddPh').onclick=async()=>{ const p=await dpcsPhoto.take('POUR_CARD','general '+(P.location||'')); if(p){ P.photos.push(p); draw(); } };
+    if(document.getElementById('pcCancel')) document.getElementById('pcCancel').onclick=()=>{ P=blank(); draw(); };
+    document.getElementById('pcSubmit').onclick=submit;
+  }
+  async function submit(){
+    const tpl=T.templates[P.kind]||[];
+    const body={action:'pour_submit',kind:P.kind,location:P.location,floor:P.floor,member_grid:P.member_grid,grade:P.grade,drawing_ref:P.drawing_ref,
+      proposed_volume_m3:P.proposed_volume_m3,planned_pour_date:P.planned_pour_date,remarks:P.remarks,photos:P.photos.map(p=>p.id),resubmit_of:P.resubmit_of||'',
+      checks:tpl.map(t=>{ const c=P.checks[t.no]||{}; return {no:t.no,answer:c.answer||'',note:c.note||'',photos:(c.photos||[]).map(p=>p.id)}; })};
+    const b=document.getElementById('pcSubmit'); b.disabled=true; b.textContent='Submitting…';
+    const r=await call(body); b.disabled=false;
+    if(!r.ok){ toast(ERR(r.error)); draw(); return; }
+    confirmBox(r.result==='NOT READY'?'NOT READY — rework':'Submitted for approval',
+      `<p style="margin:0">${esc(r.card_id)} · revision ${r.revision}</p><p class="note">${r.result==='NOT READY'?'Check(s) '+esc(r.failed.join(', '))+' failed. Rectify on site, then open the card below and resubmit.':'QA / Project Manager will review. You will see the decision under My pour cards.'}</p>`,[['OK','pri']]);
+    P=blank(P.kind); draw(); list();
+  }
+  async function list(){
+    M.textContent='Loading…'; const r=await call({action:'pour_list'});
+    if(!r.ok){ M.textContent=ERR(r.error); return; }
+    const st=c=>/^APPROVED/.test(c.status)?'<span class="pcst ok">PERMIT TO POUR</span>':c.status==='REWORK'?'<span class="pcst rw">REWORK</span>':'<span class="pcst wt">AWAITING QA</span>';
+    M.innerHTML=r.mine.length?r.mine.map(c=>`<div class="ctrow"><div class="cthd"><div><b>${esc(c.kind_label)}</b><br><span class="note">${esc(c.card_id)} r${c.revision} · ${esc(c.location)} · ${esc(c.floor)}${c.member_grid?' · '+esc(c.member_grid):''} · ${esc(c.grade)} · pour ${esc(c.planned_pour_date)}</span>
+      ${c.review_note?`<br><span class="note" style="color:${c.status==='REWORK'?'#B7443E':'#2E7D4F'}">${esc(String(c.reviewed_by).split(' (')[0])}: ${esc(c.review_note)}</span>`:''}</div>${st(c)}</div>
+      ${c.status==='REWORK'?`<button class="btn" type="button" data-rs="${esc(c.card_id)}" style="margin-top:8px;min-height:38px">Rectified — resubmit</button>`:''}</div>`).join('')
+      :'<p class="note">No pour cards yet.</p>';
+    M.querySelectorAll('[data-rs]').forEach(b=>b.onclick=()=>{ const c=r.mine.find(x=>x.card_id===b.dataset.rs);
+      P=blank(c.kind); Object.assign(P,{location:c.location,floor:c.floor,member_grid:c.member_grid,grade:c.grade,drawing_ref:c.drawing_ref,proposed_volume_m3:c.proposed_volume_m3,
+        planned_pour_date:String(c.planned_pour_date).split('-').reverse().join('-'),resubmit_of:c.card_id});
+      c.checks.forEach(k=>{ if(k.answer!=='NO') P.checks[k.no]={answer:k.answer,note:k.note,photos:[]}; });
+      draw(); scrim.scrollTo({top:0,behavior:'smooth'}); toast('Re-check the failed items, then submit'); });
+  }
+
+  /* ---------- review tab inside Project control ---------- */
+  window.pourReview=async function(box){
+    box.innerHTML='<div class="card note">Loading…</div>';
+    const r=await call({action:'pour_list'});
+    if(!r.ok){ box.innerHTML='<div class="card note">'+esc(ERR(r.error))+'</div>'; return; }
+    const pend=document.getElementById('ctPour'); if(pend) pend.textContent=r.to_review.length||'';
+    const ans=k=>k.answer==='YES'?'<b style="color:#2E7D4F">Yes</b>':k.answer==='NO'?'<b style="color:#B7443E">No</b>':'<b style="color:#9A6A00">NA</b>';
+    const card=(c,rev)=>`<div class="ctrow"><div class="cthd"><div><span class="ctblk">${esc(c.block||'—')}</span><b>${esc(c.kind_label)}</b><br>
+      <span class="note">${esc(c.location)} · ${esc(c.floor)}${c.member_grid?' · '+esc(c.member_grid):''} · ${esc(c.grade)} · ${esc(c.proposed_volume_m3)} m³ · pour ${esc(c.planned_pour_date)}${c.drawing_ref?' · dwg '+esc(c.drawing_ref):''}</span><br>
+      <span class="note">${esc(c.card_id)} r${c.revision} · by ${esc(String(c.requested_by).split(' (')[0])} · ${esc(c.created_at)}</span></div>
+      <span class="ctst ${/^APPROVED/.test(c.status)?'v':c.status==='REWORK'?'x':'p'}">${esc(/^APPROVED/.test(c.status)?'PERMIT':c.status)}</span></div>
+      <div style="margin-top:6px;font-size:13px">${c.checks.map(k=>`<div style="padding:3px 0">${k.no}. ${esc(k.text)} — ${ans(k)}${k.note?` <span class="note">(${esc(k.note)})</span>`:''}${k.photos.length?` <a href="#" data-ev="${esc(k.photos[0])}">📷 ${k.photos.length}</a>`:''}</div>`).join('')}
+        ${c.photo_ids.length?`<div class="note">Photos: ${c.photo_ids.map((p,i)=>`<a href="#" data-ev="${esc(p)}">📷 ${i+1}</a>`).join(' ')}</div>`:''}
+        <div style="margin-top:4px"><b>${esc(c.result)}</b>${c.review_note?` · <span class="note">${esc(c.review_note)}</span>`:''}</div></div>
+      ${rev?`<div class="ctin"><input type="text" placeholder="${/EXCEPTION/.test(c.result)?'Reason for accepting NA (required)':'Note (required for rework)'}" data-pn="${esc(c.card_id)}" style="flex:2;min-width:160px">
+        <button class="btn pri" type="button" data-pa="${esc(c.card_id)}" data-r="${c.revision}" style="flex:none;min-height:40px"${c.result==='NOT READY'?' disabled':''}>Approve — permit to pour</button>
+        <button class="btn" type="button" data-pw="${esc(c.card_id)}" data-r="${c.revision}" style="flex:none;min-height:40px;color:#B7443E">Rework</button></div>`:''}</div>`;
+    box.innerHTML=`<div class="card"><h2>Pour cards to review (${r.to_review.length})</h2><p class="note" style="margin-top:-4px">Approval permits the pour only — it never records concrete as cast.</p>
+      ${r.to_review.length?r.to_review.map(c=>card(c,true)).join(''):'<p class="note">Nothing waiting.</p>'}</div>
+      <div class="card"><h2>Recent decisions</h2>${r.recent.length?r.recent.map(c=>card(c,false)).join(''):'<p class="note">None yet.</p>'}</div>`;
+    box.querySelectorAll('[data-ev]').forEach(a=>a.onclick=e=>{ e.preventDefault(); dpcsPhoto.view(a.dataset.ev); });
+    const dec=async(b,decision)=>{ const id=b.dataset.pa||b.dataset.pw, note=box.querySelector(`[data-pn="${CSS.escape(id)}"]`).value.trim();
+      if(decision==='REWORK'&&!note){ toast('Write what must be rectified'); return; }
+      if(decision==='APPROVE'&&!confirm('Give permit to pour for '+id+'?')) return;
+      b.disabled=true; const x=await call({action:'pour_decide',card_id:id,revision:+b.dataset.r,decision,note});
+      if(x.ok){ toast(decision==='APPROVE'?'Permit to pour given':'Sent for rework'); pourReview(box); } else { b.disabled=false; toast(ERR(x.error)); } };
+    box.querySelectorAll('[data-pa]').forEach(b=>b.onclick=()=>dec(b,'APPROVE'));
+    box.querySelectorAll('[data-pw]').forEach(b=>b.onclick=()=>dec(b,'REWORK'));
+  };
+  pourBtn();
 })();
 </script>
 <script>
